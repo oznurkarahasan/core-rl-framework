@@ -29,18 +29,16 @@ The primary goal of this framework is to provide a generic, environment-agnostic
 
 ```text
 core-rl-framework/
-├── core_rl/
-│   ├── __init__.py
-│   ├── agents/              # Abstract Base Agent and specific implementations (SAC, PPO)
-│   ├── buffer/              # Multimodal Replay Buffer for experience replay
-│   ├── continual/           # Continual learning algorithms (e.g., EWC)
-│   └── active_learning/     # Entropy calculation and human-review queue management
-├── feedback_engine/         # Web backend for human-in-the-loop annotations
-├── tests/                   # Unit tests for core components
-├── .github/workflows/       # CI/CD pipelines
+├── src/
+│   └── core_rl/
+│       ├── __init__.py
+│       ├── agents/              # Abstract Base Agent and specific implementations (SAC, PPO)
+│       └── buffer/              # Multimodal Replay Buffer for experience replay
+├── tests/                       # Unit tests for core components
+├── reports/                     # Development reports and documentation
+├── .github/workflows/           # CI/CD pipelines
 ├── README.md                
-├── requirements.txt         # Project dependencies
-└── setup.py                 # Package configuration
+└── pyproject.toml               # Package configuration and dependencies
 ```
 
 ## Installation & Setup
@@ -49,7 +47,7 @@ It is highly recommended to install the framework inside an isolated virtual env
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/yourusername/core-rl-framework.git](https://github.com/yourusername/core-rl-framework.git)
+git clone https://github.com/oznurkarahasan/core-rl-framework.git
 cd core-rl-framework
 ```
 
@@ -68,16 +66,15 @@ conda create -n corerl python=3.10
 conda activate corerl
 ```
 
-### 3. Install Dependencies
-Install the required packages from `requirements.txt`:
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Install the Framework in Editable Mode
-To use `core_rl` as a library in your other external projects (like your autonomous vehicle repository), install it in editable mode:
+### 3. Install the Framework
+Install the package in editable mode (includes all dependencies automatically):
 ```bash
 pip install -e .
+```
+
+For development (includes testing and linting tools):
+```bash
+pip install -e ".[dev]"
 ```
 
 ## Quick Start Example
