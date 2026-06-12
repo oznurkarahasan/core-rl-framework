@@ -4,7 +4,7 @@ import random
 from collections import deque
 import numpy as np
 import torch
-from typing import Dict, Any, Tuple, List, Optional
+from typing import Any, Tuple, List, Optional
 
 class GenericReplayBuffer:
     """

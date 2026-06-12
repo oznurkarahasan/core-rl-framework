@@ -108,6 +108,16 @@ Make sure you have installed the development dependencies first:
 pip install -e ".[dev]"
 ```
 
+Check for code formatting and style errors with Ruff:
+```bash
+ruff check src/
+```
+
+Automatically fix format errors (if possible):
+```bash
+ruff check src/ --fix
+```
+
 Run the full test suite:
 ```bash
 pytest
