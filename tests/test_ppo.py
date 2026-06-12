@@ -25,15 +25,16 @@ class TestActorCriticNetwork:
     def test_act_returns_correct_shapes(self):
         net = ActorCritic(STATE_DIM, ACTION_DIM)
         state = torch.randn(1, STATE_DIM)
-        action, log_prob, value = net.act(state)
+        action, log_prob, value, entropy = net.act(state)
         assert action.shape == (1,)
         assert log_prob.shape == (1,)
         assert value.shape == (1, 1)
+        assert entropy.shape == (1,)
 
     def test_act_returns_valid_actions(self):
         net = ActorCritic(STATE_DIM, ACTION_DIM)
         state = torch.randn(100, STATE_DIM)
-        actions, _, _ = net.act(state)
+        actions, _, _, _ = net.act(state)
         assert (actions >= 0).all()
         assert (actions < ACTION_DIM).all()
 
@@ -81,27 +82,30 @@ class TestPPOSelectAction:
 
     def test_returns_valid_action(self, agent):
         state = np.random.randn(STATE_DIM).astype(np.float32)
-        action, log_prob, value = agent.select_action(state)
+        action, log_prob, value, entropy = agent.select_action(state)
         assert isinstance(action, int)
         assert 0 <= action < ACTION_DIM
 
     def test_explore_returns_log_prob_and_value(self, agent):
         state = np.random.randn(STATE_DIM).astype(np.float32)
-        action, log_prob, value = agent.select_action(state, evaluate=False)
+        action, log_prob, value, entropy = agent.select_action(state, evaluate=False)
         assert log_prob is not None
         assert value is not None
+        assert isinstance(entropy, float)
+        assert entropy >= 0.0
 
     def test_evaluate_returns_none_extras(self, agent):
         state = np.random.randn(STATE_DIM).astype(np.float32)
-        action, log_prob, value = agent.select_action(state, evaluate=True)
+        action, log_prob, value, entropy = agent.select_action(state, evaluate=True)
         assert isinstance(action, int)
         assert log_prob is None
         assert value is None
+        assert entropy == 0.0
 
     def test_evaluate_is_deterministic(self, agent):
         state = np.random.randn(STATE_DIM).astype(np.float32)
-        a1, _, _ = agent.select_action(state, evaluate=True)
-        a2, _, _ = agent.select_action(state, evaluate=True)
+        a1, _, _, _ = agent.select_action(state, evaluate=True)
+        a2, _, _, _ = agent.select_action(state, evaluate=True)
         assert a1 == a2
 
 
@@ -112,7 +116,7 @@ class TestPPOUpdate:
         buffer = RolloutBuffer(device="cpu")
         for i in range(32):
             s = np.random.randn(STATE_DIM).astype(np.float32)
-            a, lp, _ = agent.select_action(s, evaluate=False)
+            a, lp, _, _ = agent.select_action(s, evaluate=False)
             buffer.push(s, a, lp, float(np.random.randn()), i == 31)
         return agent, buffer
 

@@ -51,7 +51,7 @@ def train_sac(
             if total_steps < warmup_steps:
                 action = env.action_space.sample()
             else:
-                action = agent.select_action(state)
+                action, _ = agent.select_action(state)
 
             next_state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
@@ -100,7 +100,7 @@ def train_ppo(
     ep_count = 0
 
     for step in range(1, n_episodes * rollout_len + 1):
-        action, log_prob, _ = agent.select_action(state)
+        action, log_prob, _, _ = agent.select_action(state)
         next_state, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
 

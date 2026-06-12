@@ -1,4 +1,9 @@
 from core_rl.agents import BaseAgent, SACAgent, PPOAgent
 from core_rl.buffer import BaseBuffer, GenericReplayBuffer, RolloutBuffer
+from core_rl.active_learning import ActiveLearningCore, ReviewQueue
 
-__all__ = ["BaseAgent", "SACAgent", "PPOAgent", "BaseBuffer", "GenericReplayBuffer", "RolloutBuffer"]
+__all__ = [
+    "BaseAgent", "SACAgent", "PPOAgent",
+    "BaseBuffer", "GenericReplayBuffer", "RolloutBuffer",
+    "ActiveLearningCore", "ReviewQueue",
+]
