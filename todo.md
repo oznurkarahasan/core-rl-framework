@@ -30,7 +30,7 @@
 
 [x] Task 3.1: Develop the ActiveLearningCore module. Implement the mathematical functions required to calculate policy entropy (uncertainty distribution) during inference.
 
-[ ] Task 3.2: Design an asynchronous "Review Queue". Ensure that when the uncertainty threshold is exceeded, the uncertain state is queued for human review without freezing the main simulation loop.
+[x] Task 3.2: Design an asynchronous "Review Queue". Ensure that when the uncertainty threshold is exceeded, the uncertain state is queued for human review without freezing the main simulation loop.
 
 ## Phase 4: Continual Learning
 
