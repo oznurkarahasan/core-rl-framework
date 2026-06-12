@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 import torch
 from core_rl.agents.ppo import PPOAgent, ActorCritic
+from core_rl.buffer.rollout_buffer import RolloutBuffer
 
 STATE_DIM = 4
 ACTION_DIM = 3  # Discrete: 3 possible actions
@@ -108,46 +109,33 @@ class TestPPOUpdate:
     @pytest.fixture
     def setup(self):
         agent = PPOAgent(STATE_DIM, ACTION_DIM, device="cpu")
-        # Collect rollouts by running select_action
-        states, actions, log_probs, rewards, dones = [], [], [], [], []
+        buffer = RolloutBuffer(device="cpu")
         for i in range(32):
             s = np.random.randn(STATE_DIM).astype(np.float32)
             a, lp, _ = agent.select_action(s, evaluate=False)
-            states.append(s)
-            actions.append(a)
-            log_probs.append(lp.squeeze())
-            rewards.append(np.random.randn())
-            dones.append(i == 31)
-
-        rollouts = {
-            'states': torch.FloatTensor(np.array(states)),
-            'actions': torch.LongTensor(actions),
-            'log_probs': torch.stack(log_probs),
-            'rewards': rewards,
-            'dones': dones,
-        }
-        return agent, rollouts
+            buffer.push(s, a, lp, float(np.random.randn()), i == 31)
+        return agent, buffer
 
     def test_update_returns_loss_dict(self, setup):
-        agent, rollouts = setup
-        metrics = agent.update(rollouts)
+        agent, buffer = setup
+        metrics = agent.update(buffer)
         assert "ppo_loss" in metrics
 
     def test_update_returns_finite_loss(self, setup):
-        agent, rollouts = setup
-        metrics = agent.update(rollouts)
+        agent, buffer = setup
+        metrics = agent.update(buffer)
         assert np.isfinite(metrics["ppo_loss"])
 
     def test_policies_sync_after_update(self, setup):
-        agent, rollouts = setup
-        agent.update(rollouts)
+        agent, buffer = setup
+        agent.update(buffer)
         for p1, p2 in zip(agent.policy.parameters(), agent.policy_old.parameters()):
             assert torch.allclose(p1, p2), "policy_old should sync with policy after update"
 
     def test_update_changes_weights(self, setup):
-        agent, rollouts = setup
+        agent, buffer = setup
         initial_params = [p.clone() for p in agent.policy.parameters()]
-        agent.update(rollouts)
+        agent.update(buffer)
         changed = any(
             not torch.allclose(p1, p2)
             for p1, p2 in zip(initial_params, agent.policy.parameters())

@@ -28,10 +28,12 @@ from collections import deque
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, TYPE_CHECKING
 
-# Core module imports
 from core_rl.agents.base_agent import BaseAgent
+
+if TYPE_CHECKING:
+    from core_rl.buffer.rollout_buffer import RolloutBuffer
 
 # ---------------------------------------------------------
 # Neural Network Definitions
@@ -124,18 +126,12 @@ class PPOAgent(BaseAgent):
                 action, action_log_prob, state_value = self.policy_old.act(state_tensor)
                 return action.item(), action_log_prob, state_value
 
-    def update(self, replay_buffer: Any, batch_size: int = None) -> Dict[str, float]:
-        """
-        FIX 2: Parameter signature explicitly matches BaseAgent.
-        Note for PPO: 'replay_buffer' here is expected to be a Dict of fresh 
-        rollouts (On-Policy), not a GenericReplayBuffer object.
-        """
-        # Rename for internal clarity without breaking contract
-        rollouts = replay_buffer 
-        
-        old_states = rollouts['states'].to(self.device)
-        old_actions = rollouts['actions'].to(self.device)
-        old_log_probs = rollouts['log_probs'].to(self.device)
+    def update(self, buffer: "RolloutBuffer", batch_size: int = 0) -> Dict[str, float]:
+        rollouts = buffer.get()
+
+        old_states = rollouts['states']
+        old_actions = rollouts['actions']
+        old_log_probs = rollouts['log_probs']
         
         # FIX 5: O(1) performance instead of O(n^2) for reward collection
         rewards_deque = deque()
@@ -174,8 +170,7 @@ class PPOAgent(BaseAgent):
         return {"ppo_loss": total_loss_val / self.k_epochs}
 
     def save_checkpoint(self, checkpoint_dir: str, suffix: str = "") -> None:
-        save_dir = Path(checkpoint_dir)
-        save_dir.mkdir(parents=True, exist_ok=True)
+        save_dir = self._ensure_dir(checkpoint_dir)
         filepath = save_dir / f"ppo_checkpoint_{suffix}.pth"
         
         torch.save({

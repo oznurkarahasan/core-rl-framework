@@ -202,8 +202,7 @@ class SACAgent(BaseAgent):
         }
 
     def save_checkpoint(self, checkpoint_dir: str, suffix: str = "") -> None:
-        save_dir = Path(checkpoint_dir)
-        save_dir.mkdir(parents=True, exist_ok=True)
+        save_dir = self._ensure_dir(checkpoint_dir)
         filepath = save_dir / f"sac_checkpoint_{suffix}.pth"
         
         torch.save({

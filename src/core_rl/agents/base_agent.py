@@ -6,7 +6,7 @@ from typing import Any, Dict, TYPE_CHECKING
 import torch
 
 if TYPE_CHECKING:
-    from core_rl.buffer.buffer import GenericReplayBuffer
+    from core_rl.buffer.base_buffer import BaseBuffer
 
 class BaseAgent(ABC):
     """
@@ -42,17 +42,15 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def update(self, replay_buffer: "GenericReplayBuffer", batch_size: int) -> Dict[str, float]:
+    def update(self, buffer: "BaseBuffer", batch_size: int = 0) -> Dict[str, float]:
         """
-        Samples from the replay buffer and updates the agent's neural networks.
-        
-        Args:
-            replay_buffer (Any): The memory buffer containing past experiences.
-            batch_size (int): Number of transitions to sample.
-            
+        Updates the agent's neural networks from the provided buffer.
+
+        Off-policy agents (SAC) sample batch_size transitions randomly.
+        On-policy agents (PPO) consume the full rollout and ignore batch_size.
+
         Returns:
-            Dict[str, float]: A dictionary containing loss metrics (e.g., actor_loss, critic_loss)
-                              for logging purposes (e.g., MLflow, TensorBoard).
+            Dict[str, float]: Loss metrics for logging (e.g., actor_loss, critic_loss).
         """
         pass
 

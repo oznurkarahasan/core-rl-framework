@@ -6,7 +6,10 @@ import numpy as np
 import torch
 from typing import Any, Tuple, List, Optional
 
-class GenericReplayBuffer:
+from core_rl.buffer.base_buffer import BaseBuffer
+
+
+class GenericReplayBuffer(BaseBuffer):
     """
     Generic Reinforcement Learning experience replay buffer that supports
     multimodal data and Dict structures.
@@ -56,6 +59,9 @@ class GenericReplayBuffer:
                 f"Batch dimensions do not match (ragged array)! Neural networks expect "
                 f"fixed-size inputs. Please check your environment outputs. Detail: {e}"
             )
+
+    def clear(self) -> None:
+        self.buffer.clear()
 
     def __len__(self) -> int:
         return len(self.buffer)
