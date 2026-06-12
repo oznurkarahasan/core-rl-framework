@@ -1,16 +1,16 @@
 ## Phase 1: Foundation (Memory & Data Management)
 
-[ ] Task 1.1: Design the GenericReplayBuffer class. Ensure it supports multimodal observations (e.g., nested Dict structures combining image matrices and numerical telemetrics), rather than just standard flat arrays.
+[x] Task 1.1: Design the GenericReplayBuffer class. Ensure it supports multimodal observations (e.g., nested Dict structures combining image matrices and numerical telemetrics), rather than just standard flat arrays.
 
-[ ] Task 1.2: Implement push (experience storage) and sample (batch retrieval) methods, optimizing them for seamless integration with PyTorch tensors.
+[x] Task 1.2: Implement push (experience storage) and sample (batch retrieval) methods, optimizing them for seamless integration with PyTorch tensors.
 
 ## Phase 2: The Brain Core (Decision Engines)
 
-[ ] Task 2.1: Create the BaseAgent Abstract Base Class (ABC). Define the standard interface template, including select_action, update, and save/load methods.
+[x] Task 2.1: Create the BaseAgent Abstract Base Class (ABC). Define the standard interface template, including select_action, update, and save/load methods.
 
-[ ] Task 2.2: Implement the SACAgent (Soft Actor-Critic) for continuous action spaces. Build the Actor and Critic neural networks and integrate automatic entropy tuning (alpha).
+[x] Task 2.2: Implement the SACAgent (Soft Actor-Critic) for continuous action spaces. Build the Actor and Critic neural networks and integrate automatic entropy tuning (alpha).
 
-[ ] Task 2.3: Develop the basic PPOAgent skeleton, providing support for discrete action spaces (e.g., trading bots or grid-based environments).
+[x] Task 2.3: Develop the basic PPOAgent skeleton, providing support for discrete action spaces (e.g., trading bots or grid-based environments).
 
 ## Phase 3: Active Learning Layer (Human-in-the-Loop)
 
