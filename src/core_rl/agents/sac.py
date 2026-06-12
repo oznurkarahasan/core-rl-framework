@@ -144,16 +144,21 @@ class SACAgent(BaseAgent):
     def alpha(self) -> torch.Tensor:
         return self.log_alpha.exp()
 
-    def select_action(self, state: Any, evaluate: bool = False) -> np.ndarray:
+    def select_action(self, state: Any, evaluate: bool = False) -> Tuple[np.ndarray, float]:
+        """
+        Returns (action_np, entropy_float).
+        evaluate=True: deterministic action, entropy is 0.0.
+        evaluate=False: stochastic action, entropy ≈ -log_prob (nats).
+        """
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-        
+
         with torch.no_grad():
             if evaluate:
                 _, _, deterministic_action = self.actor.sample(state_tensor)
-                return deterministic_action.cpu().numpy()[0]
+                return deterministic_action.cpu().numpy()[0], 0.0
             else:
-                action, _, _ = self.actor.sample(state_tensor)
-                return action.cpu().numpy()[0]
+                action, log_prob, _ = self.actor.sample(state_tensor)
+                return action.cpu().numpy()[0], -log_prob.item()
 
     def update(self, replay_buffer: GenericReplayBuffer, batch_size: int) -> Dict[str, float]:
         states, actions, rewards, next_states, dones = replay_buffer.sample(batch_size)

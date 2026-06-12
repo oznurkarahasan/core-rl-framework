@@ -97,24 +97,34 @@ class TestSACSelectAction:
 
     def test_returns_numpy_array(self, agent):
         state = np.random.randn(STATE_DIM).astype(np.float32)
-        action = agent.select_action(state)
+        action, entropy = agent.select_action(state)
         assert isinstance(action, np.ndarray)
+        assert isinstance(entropy, float)
 
     def test_action_shape(self, agent):
         state = np.random.randn(STATE_DIM).astype(np.float32)
-        action = agent.select_action(state)
+        action, _ = agent.select_action(state)
         assert action.shape == (ACTION_DIM,)
+
+    def test_explore_entropy_is_positive(self, agent):
+        state = np.random.randn(STATE_DIM).astype(np.float32)
+        _, entropy = agent.select_action(state, evaluate=False)
+        assert entropy > 0.0
+
+    def test_evaluate_entropy_is_zero(self, agent):
+        state = np.random.randn(STATE_DIM).astype(np.float32)
+        _, entropy = agent.select_action(state, evaluate=True)
+        assert entropy == 0.0
 
     def test_evaluate_mode_is_deterministic(self, agent):
         state = np.random.randn(STATE_DIM).astype(np.float32)
-        action1 = agent.select_action(state, evaluate=True)
-        action2 = agent.select_action(state, evaluate=True)
+        action1, _ = agent.select_action(state, evaluate=True)
+        action2, _ = agent.select_action(state, evaluate=True)
         np.testing.assert_array_equal(action1, action2)
 
     def test_explore_mode_has_stochasticity(self, agent):
-        """Over many samples, explore mode should produce varying actions."""
         state = np.random.randn(STATE_DIM).astype(np.float32)
-        actions = [agent.select_action(state, evaluate=False) for _ in range(20)]
+        actions = [agent.select_action(state, evaluate=False)[0] for _ in range(20)]
         unique_actions = len(set(tuple(a) for a in actions))
         assert unique_actions > 1
 

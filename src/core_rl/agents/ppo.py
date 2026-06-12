@@ -63,15 +63,16 @@ class ActorCritic(nn.Module):
         state_value = self.critic_head(features)
         return action_logits, state_value
 
-    def act(self, state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def act(self, state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         action_logits, state_value = self.forward(state)
         action_probs = torch.softmax(action_logits, dim=-1)
         dist = Categorical(action_probs)
-        
+
         action = dist.sample()
         action_log_prob = dist.log_prob(action)
-        
-        return action, action_log_prob, state_value
+        entropy = dist.entropy()
+
+        return action, action_log_prob, state_value, entropy
 
     def evaluate(self, state: torch.Tensor, action: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         action_logits, state_value = self.forward(state)
@@ -114,20 +115,20 @@ class PPOAgent(BaseAgent):
 
     def select_action(self, state: Any, evaluate: bool = False) -> Any:
         """
-        FIX 4: Return type is strictly 'Any' to respect BaseAgent interface.
-        Returns a tuple: (action_int, log_prob_tensor, state_value_tensor)
-        During evaluate=True, the tensors are returned as None.
+        Returns (action_int, log_prob_tensor, state_value_tensor, entropy_float).
+        evaluate=True: greedy action, log_prob/state_value are None, entropy is 0.0.
+        evaluate=False: sampled action with full distribution statistics.
         """
         state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-        
+
         with torch.no_grad():
             if evaluate:
                 action_logits, _ = self.policy_old(state_tensor)
                 action = torch.argmax(action_logits, dim=-1)
-                return action.item(), None, None
+                return action.item(), None, None, 0.0
             else:
-                action, action_log_prob, state_value = self.policy_old.act(state_tensor)
-                return action.item(), action_log_prob, state_value
+                action, action_log_prob, state_value, entropy = self.policy_old.act(state_tensor)
+                return action.item(), action_log_prob, state_value, entropy.item()
 
     def update(self, buffer: "RolloutBuffer", batch_size: int = 0) -> Dict[str, float]:
         rollouts = buffer.get()
