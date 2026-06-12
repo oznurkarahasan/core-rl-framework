@@ -101,6 +101,35 @@ obs, _ = env.reset()
 action = agent.select_action(obs)
 ```
 
+## Running Tests
+
+Make sure you have installed the development dependencies first:
+```bash
+pip install -e ".[dev]"
+```
+
+Run the full test suite:
+```bash
+pytest
+```
+
+Run with verbose output:
+```bash
+pytest -v
+```
+
+Run a specific test file:
+```bash
+pytest tests/test_buffer.py
+pytest tests/test_sac.py
+pytest tests/test_ppo.py
+```
+
+Run with coverage report:
+```bash
+pytest --cov=core_rl --cov-report=term-missing
+```
+
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
