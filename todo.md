@@ -14,17 +14,17 @@
 
 ## Pre-Phase 3: Cleanup & Validation
  
-[ ] Task 2.4 (Cleanup): Add gradient clipping to PPOAgent.update() to prevent training instability from large gradient updates.
+[x] Task 2.4 (Cleanup): Add gradient clipping to PPOAgent.update() to prevent training instability from large gradient updates.
  
-[ ] Task 2.5 (Cleanup): Make PPO entropy coefficient a constructor hyperparameter (`entropy_coef=0.01`) instead of a hardcoded magic number.
+[x] Task 2.5 (Cleanup): Make PPO entropy coefficient a constructor hyperparameter (`entropy_coef=0.01`) instead of a hardcoded magic number.
  
-[ ] Task 2.6 (Cleanup): Rename `self.MseLoss` → `self.mse_loss` in PPOAgent to follow Python naming conventions.
+[x] Task 2.6 (Cleanup): Rename `self.MseLoss` → `self.mse_loss` in PPOAgent to follow Python naming conventions.
  
-[ ] Task 2.7 (Cleanup): Add a coverage threshold to CI (e.g., fail if coverage drops below 80%) so regressions are caught automatically.
+[x] Task 2.7 (Cleanup): Add a coverage threshold to CI (e.g., fail if coverage drops below 80%) so regressions are caught automatically.
  
-[ ] Task 2.8 (Cleanup): Update reports/12June_foundation-and-brain-core.md — remove stale "Known Remaining Issues" entries that have already been resolved (empty __init__.py, missing pyproject.toml, no unit tests).
+[x] Task 2.8 (Cleanup): Update reports/12June_foundation-and-brain-core.md — remove stale "Known Remaining Issues" entries that have already been resolved (empty __init__.py, missing pyproject.toml, no unit tests).
  
-[ ] Task 2.9 (Validation): Write an end-to-end Gymnasium training loop. Use LunarLanderContinuous-v2 with SACAgent and LunarLander-v2 with PPOAgent. This validates that the brain works before building on top of it, and establishes a baseline entropy range needed for Phase 3 threshold tuning.
+[x] Task 2.9 (Validation): Write an end-to-end Gymnasium training loop. Use LunarLanderContinuous-v3 with SACAgent and LunarLander-v3 with PPOAgent. This validates that the brain works before building on top of it, and establishes a baseline entropy range needed for Phase 3 threshold tuning.
 
 ## Phase 3: Active Learning Layer (Human-in-the-Loop)
 

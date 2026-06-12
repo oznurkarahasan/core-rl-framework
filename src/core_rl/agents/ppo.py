@@ -92,22 +92,25 @@ class PPOAgent(BaseAgent):
     """
     Proximal Policy Optimization (PPO) Agent.
     """
-    def __init__(self, state_dim: int, action_dim: int, 
-                 lr: float = 3e-4, gamma: float = 0.99, eps_clip: float = 0.2, 
-                 k_epochs: int = 4, device: str = "cpu"):
+    def __init__(self, state_dim: int, action_dim: int,
+                 lr: float = 3e-4, gamma: float = 0.99, eps_clip: float = 0.2,
+                 k_epochs: int = 4, entropy_coef: float = 0.01,
+                 max_grad_norm: float = 0.5, device: str = "cpu"):
         super().__init__(device)
-        
+
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.k_epochs = k_epochs
-        
+        self.entropy_coef = entropy_coef
+        self.max_grad_norm = max_grad_norm
+
         self.policy = ActorCritic(state_dim, action_dim).to(self.device)
         self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=lr)
-        
+
         self.policy_old = ActorCritic(state_dim, action_dim).to(self.device)
         self.policy_old.load_state_dict(self.policy.state_dict())
-        
-        self.MseLoss = nn.MSELoss()
+
+        self.mse_loss = nn.MSELoss()
 
     def select_action(self, state: Any, evaluate: bool = False) -> Any:
         """
@@ -157,10 +160,11 @@ class PPOAgent(BaseAgent):
             surr1 = ratios * advantages
             surr2 = torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
             
-            loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.01 * dist_entropy
-            
+            loss = -torch.min(surr1, surr2) + 0.5 * self.mse_loss(state_values, rewards) - self.entropy_coef * dist_entropy
+
             self.optimizer.zero_grad()
             loss.mean().backward()
+            torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.optimizer.step()
             
             total_loss_val += loss.mean().item()

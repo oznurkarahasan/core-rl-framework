@@ -154,3 +154,44 @@ class TestBufferEdgeCases:
         buffer.push(np.array([1.0, 2.0, 3.0]), 0, 1.0, np.array([1.0, 2.0, 3.0]), False)
         with pytest.raises(ValueError, match="Batch dimensions do not match"):
             buffer.sample(2)
+
+    def test_clear_empties_buffer(self):
+        buffer = GenericReplayBuffer(capacity=10)
+        for _ in range(5):
+            buffer.push(np.array([1.0]), 0, 1.0, np.array([1.0]), False)
+        buffer.clear()
+        assert len(buffer) == 0
+
+
+# ---------------------------------------------------------
+# RolloutBuffer Tests
+# ---------------------------------------------------------
+
+class TestRolloutBuffer:
+    @pytest.fixture
+    def filled_buffer(self):
+        from core_rl.buffer.rollout_buffer import RolloutBuffer
+        import torch
+        buf = RolloutBuffer(device="cpu")
+        for i in range(10):
+            s = np.random.randn(4).astype(np.float32)
+            lp = torch.tensor(-0.5)
+            buf.push(s, i % 3, lp, float(np.random.randn()), i == 9)
+        return buf
+
+    def test_len(self, filled_buffer):
+        assert len(filled_buffer) == 10
+
+    def test_get_returns_correct_keys(self, filled_buffer):
+        rollout = filled_buffer.get()
+        assert set(rollout.keys()) == {"states", "actions", "log_probs", "rewards", "dones"}
+
+    def test_get_tensor_shapes(self, filled_buffer):
+        rollout = filled_buffer.get()
+        assert rollout["states"].shape == (10, 4)
+        assert rollout["actions"].shape == (10,)
+        assert rollout["log_probs"].shape == (10,)
+
+    def test_clear_empties_buffer(self, filled_buffer):
+        filled_buffer.clear()
+        assert len(filled_buffer) == 0
