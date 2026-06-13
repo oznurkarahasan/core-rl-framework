@@ -34,9 +34,9 @@
 
 ## Phase 4: Continual Learning
 
-[ ] Task 4.1: Build the EWC (Elastic Weight Consolidation) class. Implement the logic to compute and store the Fisher Information Matrix to identify and protect critical network weights.
+[x] Task 4.1: Build the EWC (Elastic Weight Consolidation) class. Implement the logic to compute and store the Fisher Information Matrix to identify and protect critical network weights.
 
-[ ] Task 4.2: Integrate the EWC penalty function into the SAC/PPO agent's loss calculation to actively prevent catastrophic forgetting when learning new edge cases.
+[x] Task 4.2: Integrate the EWC penalty function into the SAC/PPO agent's loss calculation to actively prevent catastrophic forgetting when learning new edge cases.
 
 ## Phase 5: Feedback Engine (Human Interface & API)
 
