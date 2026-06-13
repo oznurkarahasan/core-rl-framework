@@ -23,14 +23,21 @@ class ReviewQueue:
         self._index: Dict[str, Dict[str, Any]] = {}
         self._lock = threading.Lock()
 
-    def push(self, state: Any, entropy: float) -> str:
+    @property
+    def capacity(self) -> int:
+        return self._queue.maxlen  # type: ignore[return-value]
+
+    def push(self, state: Any, entropy: float, item_id: Optional[str] = None) -> str:
         """
-        Enqueue an uncertain state. Returns the assigned item id (UUID).
+        Enqueue an uncertain state. Returns the item id (UUID).
+
+        Pass item_id to share the same UUID with a GenericReplayBuffer push,
+        so on_resolve callbacks can call buffer.update_reward(item_id, reward).
 
         Non-blocking: if at capacity, the oldest item is evicted before
         the new one is inserted.
         """
-        item_id = str(uuid.uuid4())
+        item_id = item_id or str(uuid.uuid4())
         item: Dict[str, Any] = {
             "id": item_id,
             "state": state,
