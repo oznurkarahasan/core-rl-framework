@@ -27,6 +27,7 @@ from typing import Dict, Tuple, Any
 # Core module imports
 from core_rl.agents.base_agent import BaseAgent
 from core_rl.buffer.buffer import GenericReplayBuffer
+from core_rl.continual.ewc import EWC
 
 # ---------------------------------------------------------
 # Neural Network Definitions
@@ -115,8 +116,10 @@ class SACAgent(BaseAgent):
     """
     
     def __init__(self, state_dim: int, action_dim: int, action_limit: float = 1.0,
-                 lr: float = 3e-4, gamma: float = 0.99, tau: float = 0.005, device: str = "cpu"):
+                 lr: float = 3e-4, gamma: float = 0.99, tau: float = 0.005, device: str = "cpu",
+                 ewc_lambda: float = 5000.0):
         super().__init__(device)
+        self._ewc = EWC(ewc_lambda=ewc_lambda)
         
         self.gamma = gamma
         self.tau = tau
@@ -143,6 +146,29 @@ class SACAgent(BaseAgent):
     @property
     def alpha(self) -> torch.Tensor:
         return self.log_alpha.exp()
+
+    @property
+    def ewc_lambda(self) -> float:
+        return self._ewc.ewc_lambda
+
+    @ewc_lambda.setter
+    def ewc_lambda(self, value: float) -> None:
+        self._ewc.ewc_lambda = value
+
+    def consolidate(self, replay_buffer: GenericReplayBuffer, batch_size: int = 256) -> None:
+        """
+        Snapshot Fisher matrix from the current policy over a sample of stored experiences.
+
+        Call this after the agent finishes learning a task. Until called, the EWC
+        penalty is 0 and training proceeds normally.
+        """
+        states, *_ = replay_buffer.sample(batch_size)
+
+        def _log_prob_fn(model: "Actor", states: torch.Tensor) -> torch.Tensor:
+            _, log_probs, _ = model.sample(states)
+            return log_probs
+
+        self._ewc.consolidate(self.actor, states, _log_prob_fn)
 
     def select_action(self, state: Any, evaluate: bool = False) -> Tuple[np.ndarray, float]:
         """
@@ -182,7 +208,7 @@ class SACAgent(BaseAgent):
         q1_new, q2_new = self.critic(states, new_actions)
         min_q_new = torch.min(q1_new, q2_new)
         
-        actor_loss = (self.alpha * log_probs - min_q_new).mean()
+        actor_loss = (self.alpha * log_probs - min_q_new).mean() + self._ewc.penalty(self.actor)
 
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
