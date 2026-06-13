@@ -40,6 +40,12 @@
 
 ## Phase 5: Feedback Engine (Human Interface & API)
 
-[ ] Task 5.1: Set up the generic Flask/FastAPI backend. Create API endpoints (e.g., /get_uncertain_state, /submit_label) to expose the active learning queue to the web-based teacher UI.
+[x] Task 5.1: Set up the FastAPI backend. Create API endpoints (GET /health, GET /queue/status, GET /queue/items, POST /queue/resolve/{id}) to expose the active learning queue to the web-based teacher UI.
 
-[ ] Task 5.2: Implement the reward-update bridge. Ensure that once a human label is submitted, the system dynamically updates the corresponding experience reward within the Replay Buffer.
+[x] Task 5.2: Implement the reward-update bridge. Ensure that once a human label is submitted, the system dynamically updates the corresponding experience reward within the Replay Buffer.
+
+## Phase 6: Minimal Web UI
+
+[ ] Task 6.1: Build a minimal HTML/JS interface that calls the Phase 5 API. Displays pending uncertain states from the queue, allows the human teacher to approve or reject with a reward value.
+
+[ ] Task 6.2: Connect the UI to the /queue/items and /queue/resolve/{id} endpoints. Ensure the full human-in-the-loop cycle works end-to-end: uncertain state appears on screen → human labels it → reward updates in buffer.
