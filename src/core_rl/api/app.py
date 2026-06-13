@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-_STATIC = Path(__file__).parent / "static"
-
 from core_rl.active_learning.review_queue import ReviewQueue
+
+_STATIC = Path(__file__).parent / "static"
 
 
 # ---------------------------------------------------------------------------
