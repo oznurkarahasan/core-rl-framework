@@ -17,6 +17,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
+      
+      - name: Install system dependencies
+        run: sudo apt-get install -y swig
 
       - name: Install dependencies
         run: |
@@ -29,4 +32,4 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=core_rl --cov-report=term-missing
+          pytest --cov=core_rl --cov-report=term-missing --cov-fail-under=80

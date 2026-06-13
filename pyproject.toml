@@ -13,7 +13,7 @@ dependencies = [
     "torch>=2.0.0",
     "gymnasium>=0.29.0",
     "numpy>=1.24.0",
-    "flask>=3.0.0",
+    "fastapi>=0.100.0",
 ]
 
 [project.optional-dependencies]
@@ -21,6 +21,17 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "ruff>=0.4.0",
+    "httpx>=0.24.0",
+    "uvicorn[standard]>=0.23.0",
+    "swig>=4.0.0",
+    "gymnasium[box2d]>=0.29.0",
+]
+api = [
+    "uvicorn[standard]>=0.23.0",
+]
+examples = [
+    "swig>=4.0.0",
+    "gymnasium[box2d]>=0.29.0",
 ]
 
 [tool.setuptools.packages.find]

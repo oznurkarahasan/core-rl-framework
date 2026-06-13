@@ -52,7 +52,7 @@ A generic experience replay buffer that supports:
 #### What Was Built
 An Abstract Base Class (ABC) that enforces a strict contract for all RL agents:
 - `select_action(state, evaluate)` — action selection (exploration vs exploitation)
-- `update(replay_buffer, batch_size)` — neural network parameter updates
+- `update(buffer, batch_size)` — neural network parameter updates; accepts any `BaseBuffer` subclass
 - `save_checkpoint(checkpoint_dir, suffix)` — model serialization
 - `load_checkpoint(checkpoint_dir, suffix)` — model deserialization
 
@@ -165,18 +165,6 @@ An Abstract Base Class (ABC) that enforces a strict contract for all RL agents:
 |------|------|
 | `src/core_rl/buffer/__init__.py` | Still empty — needs `GenericReplayBuffer` export |
 | `src/core_rl/agents/__init__.py` | Still empty — needs `SACAgent`, `PPOAgent` exports |
-
----
-
-## Known Remaining Issues
-
-> These are not bugs but items to address in future phases.
-
-1. **Empty `__init__.py` files** — `buffer/__init__.py` and `agents/__init__.py` do not export their classes. The `from core_rl.buffer import GenericReplayBuffer` pattern shown in README will not work until these are populated.
-
-2. **No `setup.py` or `pyproject.toml`** — README describes `pip install -e .` but the package configuration file is missing.
-
-3. **No unit tests** — `tests/test_basic.py` contains only a dummy test. Buffer and agent classes have zero test coverage.
 
 ---
 
