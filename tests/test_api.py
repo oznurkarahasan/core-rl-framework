@@ -29,6 +29,23 @@ def _push_item(queue: ReviewQueue, entropy: float = 1.5) -> str:
 
 
 # ---------------------------------------------------------------------------
+# / — human review UI
+# ---------------------------------------------------------------------------
+
+class TestUI:
+    def test_index_returns_200(self, client: TestClient) -> None:
+        assert client.get("/").status_code == 200
+
+    def test_index_returns_html(self, client: TestClient) -> None:
+        r = client.get("/")
+        assert "text/html" in r.headers["content-type"]
+
+    def test_index_not_in_openapi_schema(self, client: TestClient) -> None:
+        schema = client.get("/openapi.json").json()
+        assert "/" not in schema["paths"]
+
+
+# ---------------------------------------------------------------------------
 # /health
 # ---------------------------------------------------------------------------
 

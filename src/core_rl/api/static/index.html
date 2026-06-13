@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL Human Review</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0f1117;
+  --surface: #1a1d27;
+  --border:  #2a2d3a;
+  --text:    #e2e8f0;
+  --muted:   #64748b;
+  --green:   #22c55e;
+  --red:     #ef4444;
+  --blue:    #3b82f6;
+  --accent:  #6366f1;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.04em; }
+h1 span { color: var(--accent); }
+
+#status-bar {
+  display: flex;
+  gap: 10px;
+  font-size: 0.75rem;
+}
+
+.badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.badge.live  { color: var(--green); border-color: var(--green); }
+.badge.count { color: var(--text); }
+.badge.err   { color: var(--red);  border-color: var(--red); }
+
+#key-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+#key-bar input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  width: 220px;
+}
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.entropy {
+  background: rgba(99,102,241,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(99,102,241,0.3);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.state-box {
+  background: rgba(0,0,0,0.25);
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 56px;
+}
+
+.vec {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.chip {
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.25);
+  color: var(--blue);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.77rem;
+}
+
+.img-wrap img {
+  max-width: 100%;
+  border-radius: 6px;
+  display: block;
+}
+
+.raw {
+  font-size: 0.68rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.actions {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 600;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+button:hover    { opacity: 0.82; }
+button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-ok  { background: var(--green); color: #000; }
+.btn-bad { background: var(--red);   color: #fff; }
+.btn-sub { background: var(--accent); color: #fff; padding: 7px 11px; }
+
+.num-in {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 9px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  width: 78px;
+  text-align: center;
+}
+
+.num-in:focus { outline: none; border-color: var(--accent); }
+
+#empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.88rem;
+  padding: 64px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-size: 0.82rem;
+  animation: slideUp 0.2s ease;
+  z-index: 100;
+}
+
+.toast.ok  { border-color: var(--green); color: var(--green); }
+.toast.err { border-color: var(--red);   color: var(--red); }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>RL <span>Human Review</span> Queue</h1>
+  <div id="status-bar">
+    <span class="badge live" id="live-dot">● LIVE</span>
+    <span class="badge count" id="count-badge">— pending</span>
+  </div>
+</header>
+
+<div id="key-bar">
+  <label for="api-key">API Key (leave empty if unset):</label>
+  <input id="api-key" type="password" placeholder="X-API-Key value" autocomplete="off">
+</div>
+
+<div id="grid">
+  <p id="empty">Queue is empty — waiting for uncertain states…</p>
+</div>
+
+<script>
+'use strict';
+
+const grid   = document.getElementById('grid');
+const empty  = document.getElementById('empty');
+const countB = document.getElementById('count-badge');
+const liveB  = document.getElementById('live-dot');
+const keyIn  = document.getElementById('api-key');
+
+// Restore saved key
+keyIn.value = sessionStorage.getItem('al_key') || '';
+keyIn.addEventListener('input', () => sessionStorage.setItem('al_key', keyIn.value.trim()));
+
+let knownIds = new Set();
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function hdrs(json = false) {
+  const h = {};
+  const k = keyIn.value.trim();
+  if (k) h['X-API-Key'] = k;
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
+
+// ── State rendering ────────────────────────────────────────────────────────
+
+function renderState(state) {
+  if (Array.isArray(state)) {
+    const chips = state.map(v =>
+      `<span class="chip">${Number(v).toFixed(4)}</span>`
+    ).join('');
+    return `<div class="vec">${chips}</div>`;
+  }
+
+  if (state && typeof state === 'object') {
+    if (state.image) {
+      return `<div class="img-wrap"><img src="${escAttr(state.image)}" alt="state"></div>`;
+    }
+    // dict without image — show key: value chips
+    const chips = Object.entries(state).map(([k, v]) => {
+      const val = Array.isArray(v) ? `[…${v.length}]`
+                : typeof v === 'object' ? '{…}'
+                : String(v).slice(0, 18);
+      return `<span class="chip">${esc(k)}: ${esc(val)}</span>`;
+    }).join('');
+    return `<div class="vec">${chips}</div>`;
+  }
+
+  return `<div class="raw">${esc(JSON.stringify(state))}</div>`;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) { return esc(s); }
+
+// ── Card ───────────────────────────────────────────────────────────────────
+
+function buildCard(item) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.id = item.id;
+
+  const ts = new Date(item.timestamp * 1000).toLocaleTimeString();
+
+  card.innerHTML = `
+    <div class="card-header">
+      <span>${esc(item.id.slice(0, 8))}…</span>
+      <span class="entropy">H = ${Number(item.entropy).toFixed(4)}</span>
+      <span>${ts}</span>
+    </div>
+    <div class="state-box">${renderState(item.state)}</div>
+    <div class="actions">
+      <button class="btn-ok"  data-r="1.0">✅ +1.0</button>
+      <button class="btn-bad" data-r="-1.0">❌ −1.0</button>
+      <input  class="num-in" type="number" step="0.1" placeholder="custom">
+      <button class="btn-sub">Submit</button>
+    </div>
+  `;
+
+  card.querySelectorAll('.btn-ok, .btn-bad').forEach(btn => {
+    btn.addEventListener('click', () => resolve(item.id, parseFloat(btn.dataset.r), card));
+  });
+
+  card.querySelector('.btn-sub').addEventListener('click', () => {
+    const v = parseFloat(card.querySelector('.num-in').value);
+    if (isNaN(v)) { toast('Enter a number first', 'err'); return; }
+    resolve(item.id, v, card);
+  });
+
+  return card;
+}
+
+// ── Resolve ────────────────────────────────────────────────────────────────
+
+async function resolve(id, reward, card) {
+  card.querySelectorAll('button').forEach(b => b.disabled = true);
+  try {
+    const r = await fetch(`/queue/resolve/${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: hdrs(true),
+      body: JSON.stringify({ reward }),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.detail || r.statusText);
+    }
+    card.style.transition = 'opacity 0.25s';
+    card.style.opacity = '0';
+    setTimeout(() => { card.remove(); syncEmpty(); }, 260);
+    knownIds.delete(id);
+    toast(`✓ ${id.slice(0,8)}… → ${reward > 0 ? '+' : ''}${reward}`, 'ok');
+  } catch (e) {
+    toast(`Error: ${e.message}`, 'err');
+    card.querySelectorAll('button').forEach(b => b.disabled = false);
+  }
+}
+
+// ── Poll ───────────────────────────────────────────────────────────────────
+
+async function poll() {
+  try {
+    const r = await fetch('/queue/items', { headers: hdrs() });
+    if (!r.ok) throw new Error(r.statusText);
+
+    const items = await r.json();
+    countB.textContent = `${items.length} pending`;
+    liveB.className = 'badge live';
+
+    const serverIds = new Set(items.map(i => i.id));
+
+    // Remove cards no longer in queue (resolved elsewhere)
+    document.querySelectorAll('.card').forEach(c => {
+      if (!serverIds.has(c.dataset.id)) {
+        knownIds.delete(c.dataset.id);
+        c.remove();
+      }
+    });
+
+    // Add new cards
+    items.forEach(item => {
+      if (!knownIds.has(item.id)) {
+        knownIds.add(item.id);
+        grid.appendChild(buildCard(item));
+      }
+    });
+
+    syncEmpty();
+  } catch (e) {
+    liveB.className = 'badge err';
+    liveB.textContent = '● ERROR';
+    countB.textContent = e.message;
+  }
+}
+
+function syncEmpty() {
+  empty.hidden = document.querySelectorAll('.card').length > 0;
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+
+let toastTimer;
+function toast(msg, type = 'ok') {
+  document.querySelector('.toast')?.remove();
+  clearTimeout(toastTimer);
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  toastTimer = setTimeout(() => el.remove(), 3000);
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+poll();
+setInterval(poll, 3000);
+</script>
+</body>
+</html>
