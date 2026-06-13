@@ -1,11 +1,15 @@
 import os
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from core_rl.active_learning.review_queue import ReviewQueue
+
+_STATIC = Path(__file__).parent / "static"
 
 
 # ---------------------------------------------------------------------------
@@ -88,6 +92,14 @@ def create_app(
             raise HTTPException(status_code=401, detail="Invalid or missing API key.")
 
     auth = [Depends(_verify_key)] if api_key else []
+
+    # ------------------------------------------------------------------
+    # / — serve the human review UI (no auth)
+    # ------------------------------------------------------------------
+
+    @app.get("/", include_in_schema=False)
+    def index() -> FileResponse:
+        return FileResponse(_STATIC / "index.html")
 
     # ------------------------------------------------------------------
     # /health — no auth (liveness probe, monitoring tools)

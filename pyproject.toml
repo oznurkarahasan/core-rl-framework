@@ -22,6 +22,9 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.4.0",
     "httpx>=0.24.0",
+    "uvicorn[standard]>=0.23.0",
+    "swig>=4.0.0",
+    "gymnasium[box2d]>=0.29.0",
 ]
 api = [
     "uvicorn[standard]>=0.23.0",
