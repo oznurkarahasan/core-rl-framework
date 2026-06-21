@@ -39,6 +39,9 @@ examples = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"core_rl" = ["api/static/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
