@@ -16,6 +16,9 @@ dependencies = [
     "fastapi>=0.100.0",
     "pillow>=10.0.0",
     "python-multipart>=0.0.9",
+    "torchvision>=0.15.0",
+    "onnx>=1.14.0",
+    "onnxscript>=0.1.0",
 ]
 
 [project.optional-dependencies]

@@ -81,10 +81,10 @@
 
 ### Phase 7C: Model Training
 
-[ ] Task 7.6: Implement lightweight classification model (MobileNetV2).
+[x] Task 7.6: Implement lightweight classification model (MobileNetV2).
     - Input: 416x416 image
     - Output: category probabilities
-    - Supports resume from checkpoint (continual learning via EWC)
+    - Supports resume from checkpoint (continual learning via EWC) (not done)
 
 [ ] Task 7.7: Implement training endpoint (POST /platform/train).
     - Load labeled data from SQLite
