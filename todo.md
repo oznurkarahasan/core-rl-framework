@@ -60,11 +60,11 @@
     - images: id, session_id, filename, path, uploaded_at
     - labels: id, image_id, category_id, confirmed, created_at
 
-[ ] Task 7.2: Implement image upload endpoint (POST /platform/upload).
+[x] Task 7.2: Implement image upload endpoint (POST /platform/upload).
     - Accept batch image uploads, auto-resize to 416x416
     - Save to uploads/ directory, register in SQLite
 
-[ ] Task 7.3: Implement category management endpoints.
+[x] Task 7.3: Implement category management endpoints.
     - POST /platform/categories — add new category dynamically
     - GET /platform/categories — list all categories for current session
 
