@@ -340,7 +340,6 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
   <div id="session-list" style="margin-top: 10px; display: none;"></div>
   <div id="session-info" style="display:none">
     active session: <span id="session-name-display">—</span>
-    &nbsp;·&nbsp; id: <span id="session-id-display">—</span>
   </div>
 </div>
 
@@ -500,7 +499,6 @@ async function loadSessions() {
       nameSpan.textContent = s.name;
       const idSpan = document.createElement('span');
       idSpan.style.color = 'var(--muted)';
-      idSpan.textContent = ' · #' + s.id;
       info.appendChild(nameSpan);
       info.appendChild(idSpan);
       info.onclick = () => setSession(s.id, s.name);
@@ -526,7 +524,6 @@ function setSession(id, name) {
   document.getElementById('session-badge').textContent = name;
   document.getElementById('session-info').style.display = 'block';
   document.getElementById('session-name-display').textContent = name;
-  document.getElementById('session-id-display').textContent = id;
   document.getElementById('session-list').style.display = 'none';
   document.getElementById('cat-section').style.display = 'block';
   document.getElementById('upload-section').style.display = 'block';
