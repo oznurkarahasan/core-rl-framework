@@ -54,10 +54,11 @@
 
 ### Phase 7A: Data & Session Management
 
-[ ] Task 7.1: Set up SQLite database schema for sessions, images, and labels.
-    - sessions: id, name, created_at, base_model_path
+[x] Task 7.1: Set up SQLite database schema for sessions, images, and labels.
+    - sessions: id, name, created_at, checkpoint_path
+    - categories: id, session_id, name, created_at (session-scoped, normalized)
     - images: id, session_id, filename, path, uploaded_at
-    - labels: id, image_id, category, confirmed_by_human, timestamp
+    - labels: id, image_id, category_id, confirmed, created_at
 
 [ ] Task 7.2: Implement image upload endpoint (POST /platform/upload).
     - Accept batch image uploads, auto-resize to 416x416
