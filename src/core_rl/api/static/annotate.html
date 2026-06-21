@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Learning Platform</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0f1117;
+  --surface: #1a1d27;
+  --border:  #2a2d3a;
+  --text:    #e2e8f0;
+  --muted:   #64748b;
+  --green:   #22c55e;
+  --red:     #ef4444;
+  --blue:    #3b82f6;
+  --accent:  #f97316;
+  --yellow:  #eab308;
+}
+
+:root[data-theme="light"] {
+  --bg:      #f8f3ea;
+  --surface: #fdfaf4;
+  --border:  #e4d5bc;
+  --text:    #2c1f0e;
+  --muted:   #907a63;
+  --green:   #2d7a3a;
+  --red:     #c0392b;
+  --blue:    #2563eb;
+  --accent:  #c45208;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  min-height: 100vh;
+  padding: 24px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 { font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; }
+h1 span { color: var(--accent); }
+
+.badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+input[type="text"], select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 7px 12px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  flex: 1;
+  min-width: 140px;
+}
+
+input[type="text"]:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+button:hover { opacity: 0.85; }
+button:active { opacity: 0.7; }
+
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+button.ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.tag {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag.active { border-color: var(--accent); color: var(--accent); }
+.tag .remove { color: var(--muted); font-size: 0.9rem; }
+.tag .remove:hover { color: var(--red); }
+
+#session-info {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+#session-info span { color: var(--accent); }
+
+.upload-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); color: var(--accent); }
+.upload-zone input { display: none; }
+
+.progress-bar-wrap {
+  background: var(--bg);
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+#captcha-area {
+  display: none;
+}
+
+.captcha-question {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.captcha-question span { color: var(--accent); }
+
+.captcha-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.image-frame {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+}
+
+.image-frame img {
+  max-width: 100%;
+  max-height: 416px;
+  display: block;
+  border-radius: 8px;
+}
+
+.image-frame .no-image {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.answer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.answer-btn {
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 2px solid transparent;
+}
+
+.answer-btn.yes {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.answer-btn.no {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.answer-btn:hover { opacity: 0.8; }
+
+.skip-btn {
+  width: 100%;
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 8px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.stat-card .label { font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; }
+.stat-card .value { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+.stat-card .value.green { color: var(--green); }
+.stat-card .value.accent { color: var(--accent); }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 0.78rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+  pointer-events: none;
+  z-index: 99;
+}
+
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.ok { border-color: var(--green); color: var(--green); }
+.toast.err { border-color: var(--red); color: var(--red); }
+
+#done-msg {
+  display: none;
+  text-align: center;
+  padding: 40px 0;
+}
+
+#done-msg .big { font-size: 2rem; margin-bottom: 8px; }
+#done-msg p { color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>visual <span>learning</span> platform</h1>
+  <div style="display:flex; gap:8px; align-items:center">
+    <button class="ghost" id="theme-btn" onclick="toggleTheme()" style="padding:4px 10px; font-size:0.75rem">light</button>
+    <div class="badge" id="session-badge">no session</div>
+  </div>
+</header>
+
+<!-- ── 1. SESSION ─────────────────────────────────────────── -->
+<div class="section" id="session-section">
+  <div class="section-title">session</div>
+  <div class="row">
+    <input type="text" id="session-name" placeholder="session name (e.g. traffic-signs-v1)">
+    <button onclick="createSession()">new session</button>
+    <button class="ghost" onclick="loadSessions()">load existing</button>
+  </div>
+  <div id="session-list" style="margin-top: 10px; display: none;"></div>
+  <div id="session-info" style="display:none">
+    active session: <span id="session-name-display">—</span>
+    &nbsp;·&nbsp; id: <span id="session-id-display">—</span>
+  </div>
+</div>
+
+<!-- ── 2. CATEGORIES ──────────────────────────────────────── -->
+<div class="section" id="cat-section" style="display:none">
+  <div class="section-title">categories</div>
+  <div class="row">
+    <input type="text" id="cat-input" placeholder="e.g. stop_sign, speed_limit, lane">
+    <button onclick="addCategory()">add</button>
+  </div>
+  <div id="cat-tags" style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;"></div>
+  <p style="font-size:0.72rem; color:var(--muted); margin-top:10px;">
+    active: <span id="active-cat-name" style="color:var(--accent)">none</span>
+  </p>
+</div>
+
+<!-- ── 3. UPLOAD ──────────────────────────────────────────── -->
+<div class="section" id="upload-section" style="display:none">
+  <div class="section-title">upload images</div>
+  <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.webp,.bmp" onchange="uploadFiles(this.files)">
+    drop images here or click to browse<br>
+    <span style="font-size:0.7rem">jpg · png · webp · bmp — resized to 416×416</span>
+  </div>
+  <div id="upload-progress" style="display:none; margin-top:10px">
+    <div class="progress-label">
+      <span id="upload-label">uploading...</span>
+      <span id="upload-pct">0%</span>
+    </div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="upload-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- ── 4. CAPTCHA AREA ────────────────────────────────────── -->
+<div class="section" id="captcha-area">
+  <div class="section-title">labeling</div>
+
+  <div class="progress-label">
+    <span id="label-count-text">0 labeled</span>
+    <span id="label-pct-text">0%</span>
+  </div>
+  <div class="progress-bar-wrap" style="margin-bottom:20px">
+    <div class="progress-bar" id="label-bar" style="width:0%"></div>
+  </div>
+
+  <div id="done-msg">
+    <div class="big">✓</div>
+    <p>all images labeled for this category</p>
+    <button style="margin-top:16px" onclick="switchCategory()">label another category</button>
+  </div>
+
+  <div id="captcha-inner">
+    <p class="captcha-question">is this a <span id="cat-label">—</span>?</p>
+    <p class="captcha-sub">click yes or no — your answer trains the model</p>
+
+    <div class="image-frame">
+      <img id="captcha-img" src="" alt="label this image" style="display:none">
+      <span class="no-image" id="img-placeholder">loading...</span>
+    </div>
+
+    <div class="answer-row">
+      <button class="answer-btn yes" onclick="submitLabel(true)">✓ &nbsp;yes</button>
+      <button class="answer-btn no"  onclick="submitLabel(false)">✗ &nbsp;no</button>
+    </div>
+    <button class="skip-btn" onclick="nextImage()">skip this image →</button>
+  </div>
+</div>
+
+<!-- ── 5. STATS ───────────────────────────────────────────── -->
+<div class="section" id="stats-section" style="display:none">
+  <div class="section-title">session stats</div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">total images</div>
+      <div class="value accent" id="stat-images">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">labels given</div>
+      <div class="value green" id="stat-labels">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">categories</div>
+      <div class="value" id="stat-cats">—</div>
+    </div>
+  </div>
+  <button class="ghost" style="margin-top:12px; width:100%; font-size:0.75rem" onclick="refreshStats()">↻ refresh</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';
+
+let sessionId   = null;
+let sessionName = '';
+let activeCatId = null;
+let activeCatName = '';
+let currentImageId = null;
+let totalImages = 0;
+let labeledCount = 0;
+
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.className = 'toast', 2200);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
+}
+
+// ── SESSION ──────────────────────────────────────────────────
+
+async function createSession() {
+  const name = document.getElementById('session-name').value.trim();
+  if (!name) { toast('enter a session name', 'err'); return; }
+  try {
+    const data = await api('/platform/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    });
+    setSession(data.id, data.name);
+    toast('session created');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function loadSessions() {
+  try {
+    const sessions = await api('/platform/sessions');
+    const list = document.getElementById('session-list');
+    list.style.display = 'block';
+    list.innerHTML = '';
+    if (!sessions.length) {
+      const msg = document.createElement('span');
+      msg.style.cssText = 'font-size:0.75rem; color:var(--muted)';
+      msg.textContent = 'no sessions yet';
+      list.appendChild(msg);
+      return;
+    }
+    sessions.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'tag';
+      div.style.cssText = 'margin:3px 0; display:flex; align-items:center; justify-content:space-between; gap:8px';
+
+      const info = document.createElement('span');
+      info.style.cursor = 'pointer';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = s.name;
+      const idSpan = document.createElement('span');
+      idSpan.style.color = 'var(--muted)';
+      idSpan.textContent = ' · #' + s.id;
+      info.appendChild(nameSpan);
+      info.appendChild(idSpan);
+      info.onclick = () => setSession(s.id, s.name);
+
+      const del = document.createElement('span');
+      del.textContent = '×';
+      del.title = 'delete session';
+      del.style.cssText = 'color:var(--muted); font-size:1rem; cursor:pointer; padding:0 2px; flex-shrink:0';
+      del.onmouseenter = () => del.style.color = 'var(--red)';
+      del.onmouseleave = () => del.style.color = 'var(--muted)';
+      del.onclick = e => { e.stopPropagation(); deleteSession(s.id, s.name); };
+
+      div.appendChild(info);
+      div.appendChild(del);
+      list.appendChild(div);
+    });
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function setSession(id, name) {
+  sessionId = id;
+  sessionName = name;
+  document.getElementById('session-badge').textContent = name;
+  document.getElementById('session-info').style.display = 'block';
+  document.getElementById('session-name-display').textContent = name;
+  document.getElementById('session-id-display').textContent = id;
+  document.getElementById('session-list').style.display = 'none';
+  document.getElementById('cat-section').style.display = 'block';
+  document.getElementById('upload-section').style.display = 'block';
+  document.getElementById('stats-section').style.display = 'block';
+  loadCategories();
+  refreshStats();
+}
+
+// ── CATEGORIES ───────────────────────────────────────────────
+
+async function addCategory() {
+  const input = document.getElementById('cat-input');
+  const name = input.value.trim();
+  if (!name || !sessionId) return;
+  try {
+    const data = await api('/platform/categories', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId, name }),
+    });
+    input.value = '';
+    renderCategoryTag(data.id, data.name);
+    toast(`category "${data.name}" added`);
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function loadCategories() {
+  try {
+    const cats = await api(`/platform/categories?session_id=${sessionId}`);
+    document.getElementById('cat-tags').innerHTML = '';
+    cats.forEach(c => renderCategoryTag(c.id, c.name));
+  } catch(e) {}
+}
+
+function renderCategoryTag(id, name) {
+  const tags = document.getElementById('cat-tags');
+  if (document.getElementById(`cat-${id}`)) return;
+  const tag = document.createElement('div');
+  tag.className = 'tag';
+  tag.id = `cat-${id}`;
+  const span = document.createElement('span');
+  span.textContent = name;
+  tag.appendChild(span);
+  tag.onclick = () => selectCategory(id, name);
+  tags.appendChild(tag);
+}
+
+function selectCategory(id, name) {
+  activeCatId = id;
+  activeCatName = name;
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  const el = document.getElementById(`cat-${id}`);
+  if (el) el.classList.add('active');
+  document.getElementById('active-cat-name').textContent = name;
+  document.getElementById('cat-label').textContent = name;
+  document.getElementById('captcha-area').style.display = 'block';
+  document.getElementById('done-msg').style.display = 'none';
+  document.getElementById('captcha-inner').style.display = 'block';
+  labeledCount = 0;
+  loadNextImage();
+}
+
+// ── UPLOAD ───────────────────────────────────────────────────
+
+async function uploadFiles(files) {
+  if (!sessionId) { toast('create a session first', 'err'); return; }
+  if (!files.length) return;
+
+  const progress = document.getElementById('upload-progress');
+  const bar = document.getElementById('upload-bar');
+  const label = document.getElementById('upload-label');
+  const pct = document.getElementById('upload-pct');
+  progress.style.display = 'block';
+
+  const chunkSize = 10;
+  let uploaded = 0;
+  let failed = 0;
+  const total = files.length;
+
+  for (let i = 0; i < total; i += chunkSize) {
+    const chunk = Array.from(files).slice(i, i + chunkSize);
+    const form = new FormData();
+    chunk.forEach(f => form.append('files', f));
+    try {
+      const res = await fetch(`${API}/platform/sessions/${sessionId}/upload`, {
+        method: 'POST',
+        body: form,
+      });
+      const data = await res.json();
+      uploaded += data.uploaded || 0;
+      failed += (data.errors || []).length;
+    } catch(e) {
+      failed += chunk.length;
+    }
+    const p = Math.round((Math.min(i + chunkSize, total) / total) * 100);
+    bar.style.width = p + '%';
+    pct.textContent = p + '%';
+  }
+
+  const summary = failed > 0
+    ? `${uploaded} uploaded, ${failed} failed`
+    : `${uploaded} / ${total} uploaded`;
+  label.textContent = summary;
+  failed > 0 ? toast(summary, 'err') : toast(`${uploaded} images uploaded`);
+  refreshStats();
+}
+
+// drag & drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  uploadFiles(e.dataTransfer.files);
+});
+
+// ── CAPTCHA ──────────────────────────────────────────────────
+
+async function loadNextImage() {
+  if (!sessionId || !activeCatId) return;
+  const img = document.getElementById('captcha-img');
+  const placeholder = document.getElementById('img-placeholder');
+  img.style.display = 'none';
+  placeholder.textContent = 'loading...';
+
+  try {
+    const data = await api(`/platform/next?session_id=${sessionId}&category_id=${activeCatId}`);
+    if (!data) {
+      showDone();
+      return;
+    }
+    currentImageId = data.image_id;
+    img.src = data.path + '?t=' + Date.now();
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    updateLabelProgress();
+  } catch(e) {
+    placeholder.textContent = 'failed to load';
+  }
+}
+
+async function submitLabel(confirmed) {
+  if (!currentImageId || !activeCatId) return;
+  try {
+    await api('/platform/label', {
+      method: 'POST',
+      body: JSON.stringify({
+        image_id: currentImageId,
+        category_id: activeCatId,
+        confirmed,
+      }),
+    });
+    if (confirmed) labeledCount++;
+    toast(confirmed ? '✓ yes — labeled' : '✗ no — skipped');
+    nextImage();
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function nextImage() {
+  document.getElementById('captcha-img').style.display = 'none';
+  document.getElementById('img-placeholder').style.display = 'block';
+  document.getElementById('img-placeholder').textContent = 'loading...';
+  updateLabelProgress();
+  loadNextImage();
+}
+
+function showDone() {
+  document.getElementById('captcha-inner').style.display = 'none';
+  document.getElementById('done-msg').style.display = 'block';
+  refreshStats();
+}
+
+function switchCategory() {
+  document.getElementById('done-msg').style.display = 'none';
+  document.getElementById('captcha-inner').style.display = 'block';
+  activeCatId = null;
+  activeCatName = '';
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  document.getElementById('active-cat-name').textContent = 'none';
+}
+
+async function updateLabelProgress() {
+  try {
+    const stats = await api(`/platform/stats?session_id=${sessionId}`);
+    totalImages = stats.total_images;
+    const total = totalImages;
+    const catStat = stats.per_category.find(c => c.name === activeCatName);
+    const labeled = catStat ? catStat.count : 0;
+    const pct = total > 0 ? Math.round((labeled / total) * 100) : 0;
+    document.getElementById('label-count-text').textContent = `${labeled} labeled`;
+    document.getElementById('label-pct-text').textContent = `${pct}%`;
+    document.getElementById('label-bar').style.width = pct + '%';
+  } catch(e) {}
+}
+
+// ── STATS ────────────────────────────────────────────────────
+
+async function refreshStats() {
+  if (!sessionId) return;
+  try {
+    const stats = await api(`/platform/stats?session_id=${sessionId}`);
+    document.getElementById('stat-images').textContent = stats.total_images;
+    document.getElementById('stat-labels').textContent = stats.total_labels;
+    document.getElementById('stat-cats').textContent = stats.per_category.length;
+  } catch(e) {}
+}
+
+// ── SESSION DELETE ───────────────────────────────────────────
+
+async function deleteSession(id, name) {
+  if (!confirm(`Delete session "${name}" and all its images and labels?`)) return;
+  try {
+    await api(`/platform/sessions/${id}`, { method: 'DELETE' });
+    if (sessionId === id) resetSession();
+    toast(`"${name}" deleted`);
+    loadSessions();
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function resetSession() {
+  sessionId = null;
+  sessionName = '';
+  activeCatId = null;
+  activeCatName = '';
+  currentImageId = null;
+  document.getElementById('session-badge').textContent = 'no session';
+  document.getElementById('session-info').style.display = 'none';
+  ['cat-section', 'upload-section', 'stats-section', 'captcha-area'].forEach(id =>
+    document.getElementById(id).style.display = 'none'
+  );
+}
+
+// ── THEME ────────────────────────────────────────────────────
+
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  document.documentElement.setAttribute('data-theme', isLight ? '' : 'light');
+  localStorage.setItem('theme', isLight ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = isLight ? 'light' : 'dark';
+}
+
+(function () {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('theme-btn').textContent = 'dark';
+  }
+})();
+
+// ── KEYBOARD SHORTCUTS ───────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (!currentImageId) return;
+  if (e.key === 'y' || e.key === 'Y') submitLabel(true);
+  if (e.key === 'n' || e.key === 'N') submitLabel(false);
+  if (e.key === 's' || e.key === 'S') nextImage();
+});
+</script>
+</body>
+</html>

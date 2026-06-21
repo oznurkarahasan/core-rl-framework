@@ -111,6 +111,20 @@ class PlatformDB:
             )
             return cur.lastrowid
 
+    def delete_session(self, session_id: int) -> bool:
+        """Delete a session and all its data. Returns False if not found."""
+        with self._conn() as conn:
+            if conn.execute("SELECT id FROM sessions WHERE id = ?", (session_id,)).fetchone() is None:
+                return False
+            conn.execute(
+                "DELETE FROM labels WHERE image_id IN (SELECT id FROM images WHERE session_id = ?)",
+                (session_id,),
+            )
+            conn.execute("DELETE FROM categories WHERE session_id = ?", (session_id,))
+            conn.execute("DELETE FROM images WHERE session_id = ?", (session_id,))
+            conn.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+            return True
+
     def get_session(self, session_id: int) -> Optional[sqlite3.Row]:
         with self._conn() as conn:
             return conn.execute(

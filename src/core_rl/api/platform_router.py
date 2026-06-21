@@ -128,6 +128,13 @@ def create_platform_router(
             checkpoint_path=row["checkpoint_path"],
         )
 
+    @router.delete("/sessions/{session_id}", status_code=200)
+    def delete_session(session_id: int) -> dict:
+        """Delete a session and all its images, categories, and labels."""
+        if not db.delete_session(session_id):
+            raise HTTPException(status_code=404, detail=f"Session {session_id} not found.")
+        return {"deleted": True}
+
     @router.get("/sessions", response_model=list[SessionResponse])
     def list_sessions() -> list[SessionResponse]:
         """List all sessions, newest first."""

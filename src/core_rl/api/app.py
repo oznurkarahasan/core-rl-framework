@@ -97,9 +97,16 @@ def create_app(
     # / — serve the human review UI (no auth)
     # ------------------------------------------------------------------
 
+    from core_rl.api.platform_router import create_platform_router
+    app.include_router(create_platform_router())
+
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:
         return FileResponse(_STATIC / "index.html")
+
+    @app.get("/annotate", include_in_schema=False)
+    def annotate() -> FileResponse:
+        return FileResponse(_STATIC / "annotate.html")
 
     # ------------------------------------------------------------------
     # /health — no auth (liveness probe, monitoring tools)

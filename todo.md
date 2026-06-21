@@ -70,12 +70,12 @@
 
 ### Phase 7B: CAPTCHA-Style Labeling UI
 
-[ ] Task 7.4: Build annotate.html — CAPTCHA-style labeling interface.
+[x] Task 7.4: Build annotate.html — CAPTCHA-style labeling interface.
     - Show 1 image at a time: "Is this a stop sign?" → [Yes] [No]
-    - Or grid mode: "Select all stop signs" → multiple images shown
+    - Or grid mode: "Select all stop signs" → multiple images shown (not done)
     - Progress bar: X images labeled / total
 
-[ ] Task 7.5: Connect labeling UI to FastAPI.
+[x] Task 7.5: Connect labeling UI to FastAPI.
     - POST /platform/label — save human answer to SQLite
     - GET /platform/next — fetch next unlabeled image for review
 

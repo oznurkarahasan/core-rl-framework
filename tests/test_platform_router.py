@@ -93,6 +93,29 @@ class TestSessions:
         names = [s["name"] for s in resp.json()]
         assert names[0] == "second"
 
+    def test_delete_session(self, client: TestClient, session_id: int) -> None:
+        resp = client.delete(f"/platform/sessions/{session_id}")
+        assert resp.status_code == 200
+        assert resp.json()["deleted"] is True
+        assert client.get("/platform/sessions").json() == []
+
+    def test_delete_session_cascades(self, client: TestClient, session_id: int) -> None:
+        """Deleting a session also removes its images, categories, and labels."""
+        cat = client.post("/platform/categories", json={"session_id": session_id, "name": "x"}).json()
+        jpeg = make_jpeg_bytes()
+        img = client.post(
+            f"/platform/sessions/{session_id}/upload",
+            files=[("files", ("a.jpg", jpeg, "image/jpeg"))],
+        ).json()["images"][0]
+        client.post("/platform/label", json={"image_id": img["image_id"], "category_id": cat["id"], "confirmed": True})
+        client.delete(f"/platform/sessions/{session_id}")
+        # session gone
+        assert client.get("/platform/sessions").json() == []
+
+    def test_delete_missing_session_returns_404(self, client: TestClient) -> None:
+        resp = client.delete("/platform/sessions/9999")
+        assert resp.status_code == 404
+
 
 # ------------------------------------------------------------------
 # Upload
