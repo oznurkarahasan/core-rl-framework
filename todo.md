@@ -49,3 +49,69 @@
 [x] Task 6.1: Build a minimal HTML/JS interface that calls the Phase 5 API. Displays pending uncertain states from the queue, allows the human teacher to approve or reject with a reward value.
 
 [x] Task 6.2: Connect the UI to the /queue/items and /queue/resolve/{id} endpoints. Ensure the full human-in-the-loop cycle works end-to-end: uncertain state appears on screen → human labels it → reward updates in buffer.
+
+## Phase 7: Visual Learning Platform (CAPTCHA-Style Active Learning)
+
+### Phase 7A: Data & Session Management
+
+[ ] Task 7.1: Set up SQLite database schema for sessions, images, and labels.
+    - sessions: id, name, created_at, base_model_path
+    - images: id, session_id, filename, path, uploaded_at
+    - labels: id, image_id, category, confirmed_by_human, timestamp
+
+[ ] Task 7.2: Implement image upload endpoint (POST /platform/upload).
+    - Accept batch image uploads, auto-resize to 416x416
+    - Save to uploads/ directory, register in SQLite
+
+[ ] Task 7.3: Implement category management endpoints.
+    - POST /platform/categories — add new category dynamically
+    - GET /platform/categories — list all categories for current session
+
+### Phase 7B: CAPTCHA-Style Labeling UI
+
+[ ] Task 7.4: Build annotate.html — CAPTCHA-style labeling interface.
+    - Show 1 image at a time: "Is this a stop sign?" → [Yes] [No]
+    - Or grid mode: "Select all stop signs" → multiple images shown
+    - Progress bar: X images labeled / total
+
+[ ] Task 7.5: Connect labeling UI to FastAPI.
+    - POST /platform/label — save human answer to SQLite
+    - GET /platform/next — fetch next unlabeled image for review
+
+### Phase 7C: Model Training
+
+[ ] Task 7.6: Implement lightweight classification model (MobileNetV2).
+    - Input: 416x416 image
+    - Output: category probabilities
+    - Supports resume from checkpoint (continual learning via EWC)
+
+[ ] Task 7.7: Implement training endpoint (POST /platform/train).
+    - Load labeled data from SQLite
+    - Resume from last checkpoint if exists
+    - Train in background, stream progress via GET /platform/train/status
+
+[ ] Task 7.8: Implement ONNX export endpoint (POST /platform/export).
+    - Export current checkpoint to checkpoints/model_v{n}.onnx
+    - Return download link
+
+### Phase 7D: Test & Validation
+
+[ ] Task 7.9: Build test UI — model prediction screen.
+    - Show unlabeled image → model predicts → confidence score shown
+    - Human confirms or rejects → accuracy score updates live
+
+[ ] Task 7.10: Implement accuracy tracking endpoint (GET /platform/stats).
+    - Per-category accuracy
+    - Confusion matrix
+    - Total images labeled / confirmed
+
+### Phase 7E: Qwen2.5-VL Comparison
+
+[ ] Task 7.11: Integrate Ollama + Qwen2.5-VL-3B as auto-labeling assistant.
+    - POST /platform/qwen/predict — send image, get Qwen's label suggestion
+    - Show suggestion in UI: "Qwen thinks: stop sign (94%)" → sen onayla/reddet
+
+[ ] Task 7.12: Build comparison screen.
+    - Same image → Your model prediction vs Qwen prediction
+    - Side by side confidence scores
+    - "Where does my model disagree with Qwen?" görünür
