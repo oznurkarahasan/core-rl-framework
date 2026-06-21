@@ -179,6 +179,24 @@ class PlatformTrainer:
 
         return metrics
 
+    def load_checkpoint(self) -> "PlatformTrainer":
+        """
+        Load the latest checkpoint for export or inference.
+        Categories and version are read from the checkpoint — not from the DB.
+        Raises RuntimeError if no checkpoint exists.
+        """
+        existing = self._latest_checkpoint()
+        if existing is None:
+            raise RuntimeError(
+                f"No checkpoint found for session {self.session_id}. Train the model first."
+            )
+        state = torch.load(existing, map_location=self.device, weights_only=False)
+        self.categories = state["categories"]
+        self.version = state["version"]
+        self.model = self._build_model(len(self.categories))
+        self.model.load_state_dict(state["model"])
+        return self
+
     def export_onnx(self) -> Path:
         """
         Export the current model to ONNX.

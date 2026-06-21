@@ -4,14 +4,20 @@
 # Endpoints:
 #   POST /platform/sessions               — create a new training session
 #   GET  /platform/sessions               — list all sessions
+#   DELETE /platform/sessions/{id}        — delete a session
 #   POST /platform/sessions/{id}/upload   — upload images into a session
 #   POST /platform/categories             — add a category to a session
 #   GET  /platform/categories             — list categories for a session
 #   GET  /platform/next                   — get next unlabeled image
 #   POST /platform/label                  — submit a label
 #   GET  /platform/stats                  — session stats
+#   POST /platform/train                  — start training in background
+#   GET  /platform/train/status           — poll training progress
+#   POST /platform/export                 — export model to ONNX
+#   GET  /platform/download/{filename}    — download ONNX file
 
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +34,7 @@ from core_rl.data.uploader import ImageUploader
 
 DEFAULT_DB_PATH = Path("platform.db")
 DEFAULT_UPLOAD_DIR = Path("uploads")
+DEFAULT_CHECKPOINT_DIR = Path("checkpoints")
 
 
 # ------------------------------------------------------------------
@@ -85,6 +92,30 @@ class StatsResponse(BaseModel):
     per_category: list[dict[str, Any]]
 
 
+class TrainRequest(BaseModel):
+    session_id: int
+    epochs: int = 5
+    batch_size: int = 16
+    lr: float = 1e-4
+
+
+class TrainStatusResponse(BaseModel):
+    session_id: int
+    status: str          # "idle" | "running" | "done" | "error"
+    epoch: int | None = None
+    total_epochs: int | None = None
+    loss: float | None = None
+    accuracy: float | None = None
+    error: str | None = None
+
+
+class ExportResponse(BaseModel):
+    path: str
+    filename: str
+    categories: list[str]
+    version: int
+
+
 # ------------------------------------------------------------------
 # Router factory
 # ------------------------------------------------------------------
@@ -92,6 +123,7 @@ class StatsResponse(BaseModel):
 def create_platform_router(
     db_path: Path = DEFAULT_DB_PATH,
     upload_dir: Path = DEFAULT_UPLOAD_DIR,
+    checkpoint_dir: Path = DEFAULT_CHECKPOINT_DIR,
     target_size: tuple[int, int] = (416, 416),
 ) -> APIRouter:
     """
@@ -101,14 +133,23 @@ def create_platform_router(
         app.include_router(create_platform_router())
 
     Args:
-        db_path:     Path to the SQLite database file.
-        upload_dir:  Directory where uploaded images are stored.
-        target_size: Resize target (width, height) for uploaded images.
+        db_path:        Path to the SQLite database file.
+        upload_dir:     Directory where uploaded images are stored.
+        checkpoint_dir: Directory for model checkpoints and ONNX exports.
+        target_size:    Resize target (width, height) for uploaded images.
     """
     db = PlatformDB(path=db_path)
     db.init()
 
+    checkpoint_dir = Path(checkpoint_dir)
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
     uploader = ImageUploader(upload_dir=upload_dir, target_size=target_size)
+
+    # In-memory store for active training jobs: session_id -> job dict.
+    # Assumes single-worker deployment (uvicorn without --workers > 1).
+    # For multi-worker setups, replace with a shared store (e.g. Redis or a DB table).
+    _training_jobs: dict[int, dict] = {}
 
     router = APIRouter(prefix="/platform", tags=["platform"])
 
@@ -133,6 +174,7 @@ def create_platform_router(
         """Delete a session and all its images, categories, and labels."""
         if not db.delete_session(session_id):
             raise HTTPException(status_code=404, detail=f"Session {session_id} not found.")
+        _training_jobs.pop(session_id, None)
         return {"deleted": True}
 
     @router.get("/sessions", response_model=list[SessionResponse])
@@ -285,5 +327,129 @@ def create_platform_router(
 
         stats = db.get_stats(session_id)
         return StatsResponse(**stats)
+
+    # ----------------------------------------------------------------
+    # Training (Task 7.7)
+    # ----------------------------------------------------------------
+
+    @router.post("/train", response_model=TrainStatusResponse, status_code=202)
+    def start_training(body: TrainRequest) -> TrainStatusResponse:
+        """
+        Start model training in a background thread.
+        Returns immediately with status 'running'.
+        Poll GET /platform/train/status?session_id=X for progress.
+        """
+        from core_rl.training.trainer import PlatformTrainer
+
+        session = db.get_session(body.session_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail=f"Session {body.session_id} not found.")
+
+        if _training_jobs.get(body.session_id, {}).get("status") == "running":
+            raise HTTPException(status_code=409, detail="Training already running for this session.")
+
+        _training_jobs[body.session_id] = {
+            "status": "running",
+            "epoch": 0,
+            "total_epochs": body.epochs,
+            "loss": None,
+            "accuracy": None,
+            "error": None,
+        }
+
+        def _run() -> None:
+            try:
+                trainer = PlatformTrainer(
+                    db=db,
+                    session_id=body.session_id,
+                    checkpoint_dir=checkpoint_dir,
+                )
+
+                def on_progress(metrics: dict) -> None:
+                    _training_jobs[body.session_id].update({
+                        "epoch": metrics["epoch"],
+                        "loss": metrics["loss"],
+                        "accuracy": metrics["accuracy"],
+                    })
+
+                trainer.train(
+                    epochs=body.epochs,
+                    batch_size=body.batch_size,
+                    lr=body.lr,
+                    on_progress=on_progress,
+                )
+                _training_jobs[body.session_id]["status"] = "done"
+            except Exception as e:
+                _training_jobs[body.session_id].update({
+                    "status": "error",
+                    "error": str(e),
+                })
+
+        threading.Thread(target=_run, daemon=True).start()
+
+        return TrainStatusResponse(
+            session_id=body.session_id,
+            status="running",
+            total_epochs=body.epochs,
+        )
+
+    @router.get("/train/status", response_model=TrainStatusResponse)
+    def train_status(session_id: int) -> TrainStatusResponse:
+        """Poll training progress for a session."""
+        job = _training_jobs.get(session_id)
+        if job is None:
+            return TrainStatusResponse(session_id=session_id, status="idle")
+        return TrainStatusResponse(session_id=session_id, **job)
+
+    # ----------------------------------------------------------------
+    # Export (Task 7.8)
+    # ----------------------------------------------------------------
+
+    @router.post("/export", response_model=ExportResponse)
+    def export_model(session_id: int) -> ExportResponse:
+        """
+        Export the current checkpoint to ONNX.
+        Returns the download path.
+        """
+        from core_rl.training.trainer import PlatformTrainer
+
+        session = db.get_session(session_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail=f"Session {session_id} not found.")
+
+        if _training_jobs.get(session_id, {}).get("status") == "running":
+            raise HTTPException(status_code=409, detail="Training in progress. Wait for it to finish.")
+
+        try:
+            trainer = PlatformTrainer(db=db, session_id=session_id, checkpoint_dir=checkpoint_dir)
+            trainer.load_checkpoint()
+            onnx_path = trainer.export_onnx()
+        except RuntimeError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+        return ExportResponse(
+            path=f"/platform/download/{onnx_path.name}",
+            filename=onnx_path.name,
+            categories=trainer.categories,
+            version=trainer.version,
+        )
+
+    @router.get("/download/{filename}", include_in_schema=False)
+    def download_model(filename: str) -> FileResponse:
+        """Download an exported ONNX model."""
+        model_path = (checkpoint_dir / filename).resolve()
+        if not model_path.is_relative_to(checkpoint_dir.resolve()):
+            raise HTTPException(status_code=403, detail="Access denied.")
+        if not model_path.exists():
+            raise HTTPException(status_code=404, detail="Model file not found.")
+        return FileResponse(
+            str(model_path),
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
 
     return router

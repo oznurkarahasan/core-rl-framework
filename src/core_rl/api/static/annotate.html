@@ -85,7 +85,7 @@ h1 span { color: var(--accent); }
   flex-wrap: wrap;
 }
 
-input[type="text"], select {
+input[type="text"], input[type="number"], select {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--text);
@@ -97,7 +97,7 @@ input[type="text"], select {
   min-width: 140px;
 }
 
-input[type="text"]:focus, select:focus {
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
   outline: none;
   border-color: var(--accent);
 }
@@ -428,6 +428,45 @@ button.ghost:hover { border-color: var(--accent); color: var(--accent); }
   <button class="ghost" style="margin-top:12px; width:100%; font-size:0.75rem" onclick="refreshStats()">↻ refresh</button>
 </div>
 
+<!-- ── 6. TRAINING ─────────────────────────────────────────── -->
+<div class="section" id="train-section" style="display:none">
+  <div class="section-title">model training</div>
+
+  <div class="row" style="margin-bottom:14px">
+    <div>
+      <div style="font-size:0.7rem; color:var(--muted); margin-bottom:3px">epochs</div>
+      <input type="number" id="train-epochs" value="10" min="1" max="200" style="width:70px; flex:none">
+    </div>
+    <div>
+      <div style="font-size:0.7rem; color:var(--muted); margin-bottom:3px">batch size</div>
+      <input type="number" id="train-batch" value="16" min="1" max="64" style="width:70px; flex:none">
+    </div>
+    <button id="train-btn" onclick="startTraining()" style="margin-top:auto">train</button>
+  </div>
+
+  <div id="train-status-area" style="display:none">
+    <div class="progress-label">
+      <span id="train-status-text">idle</span>
+      <span id="train-epoch-text">—</span>
+    </div>
+    <div class="progress-bar-wrap" style="margin-bottom:10px">
+      <div class="progress-bar" id="train-bar" style="width:0%"></div>
+    </div>
+    <div style="display:flex; gap:16px; font-size:0.75rem; color:var(--muted)">
+      <span>loss: <span id="train-loss" style="color:var(--text)">—</span></span>
+      <span>accuracy: <span id="train-acc" style="color:var(--green)">—</span></span>
+    </div>
+  </div>
+
+  <div id="export-area" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--border)">
+    <button id="export-btn" onclick="exportModel()" class="ghost" style="width:100%">export to ONNX</button>
+    <div id="download-area" style="display:none; margin-top:10px; font-size:0.75rem; color:var(--muted)">
+      <a id="download-link" href="" style="color:var(--accent)">↓ download model</a>
+      &nbsp;·&nbsp; <span id="export-cats"></span>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -440,6 +479,7 @@ let activeCatName = '';
 let currentImageId = null;
 let totalImages = 0;
 let labeledCount = 0;
+let trainPollTimer = null;
 
 function toast(msg, type = 'ok') {
   const el = document.getElementById('toast');
@@ -528,8 +568,10 @@ function setSession(id, name) {
   document.getElementById('cat-section').style.display = 'block';
   document.getElementById('upload-section').style.display = 'block';
   document.getElementById('stats-section').style.display = 'block';
+  document.getElementById('train-section').style.display = 'block';
   loadCategories();
   refreshStats();
+  checkTrainStatus();
 }
 
 // ── CATEGORIES ───────────────────────────────────────────────
@@ -731,6 +773,109 @@ async function refreshStats() {
   } catch(e) {}
 }
 
+// ── TRAINING ─────────────────────────────────────────────────
+
+async function startTraining() {
+  if (!sessionId) return;
+  const epochs = parseInt(document.getElementById('train-epochs').value) || 10;
+  const batch  = parseInt(document.getElementById('train-batch').value)  || 16;
+  try {
+    await api('/platform/train', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: sessionId, epochs, batch_size: batch }),
+    });
+    document.getElementById('train-status-area').style.display = 'block';
+    document.getElementById('export-area').style.display = 'none';
+    document.getElementById('download-area').style.display = 'none';
+    document.getElementById('train-bar').style.width = '0%';
+    const btn = document.getElementById('train-btn');
+    btn.disabled = true;
+    btn.textContent = 'training...';
+    pollTrainingStatus(epochs);
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function pollTrainingStatus(totalEpochs) {
+  if (trainPollTimer) clearInterval(trainPollTimer);
+  trainPollTimer = setInterval(async () => {
+    try {
+      const status = await api(`/platform/train/status?session_id=${sessionId}`);
+      updateTrainUI(status, totalEpochs);
+      if (status.status === 'done' || status.status === 'error') {
+        clearInterval(trainPollTimer);
+        trainPollTimer = null;
+      }
+    } catch(e) {}
+  }, 1000);
+}
+
+function updateTrainUI(status, totalEpochs) {
+  const epoch = status.epoch || 0;
+  const total = status.total_epochs || totalEpochs;
+  const pct   = total > 0 ? Math.round((epoch / total) * 100) : 0;
+
+  document.getElementById('train-bar').style.width = pct + '%';
+  document.getElementById('train-epoch-text').textContent = `${epoch} / ${total}`;
+  if (status.loss     !== null && status.loss     !== undefined)
+    document.getElementById('train-loss').textContent = status.loss.toFixed(4);
+  if (status.accuracy !== null && status.accuracy !== undefined)
+    document.getElementById('train-acc').textContent  = status.accuracy.toFixed(1) + '%';
+
+  const btn = document.getElementById('train-btn');
+  if (status.status === 'done') {
+    document.getElementById('train-status-text').textContent = 'done ✓';
+    document.getElementById('train-bar').style.width = '100%';
+    document.getElementById('export-area').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'train again';
+    toast('training complete');
+  } else if (status.status === 'error') {
+    document.getElementById('train-status-text').textContent = 'error';
+    btn.disabled = false;
+    btn.textContent = 'retry';
+    toast(status.error || 'training failed', 'err');
+  } else {
+    document.getElementById('train-status-text').textContent = 'training...';
+  }
+}
+
+async function checkTrainStatus() {
+  try {
+    const status = await api(`/platform/train/status?session_id=${sessionId}`);
+    if (status.status === 'idle') return;
+    document.getElementById('train-status-area').style.display = 'block';
+    updateTrainUI(status, status.total_epochs || 10);
+    if (status.status === 'running') {
+      const btn = document.getElementById('train-btn');
+      btn.disabled = true;
+      btn.textContent = 'training...';
+      pollTrainingStatus(status.total_epochs || 10);
+    }
+  } catch(e) {}
+}
+
+async function exportModel() {
+  if (!sessionId) return;
+  const btn = document.getElementById('export-btn');
+  btn.disabled = true;
+  btn.textContent = 'exporting...';
+  try {
+    const data = await api(`/platform/export?session_id=${sessionId}`, { method: 'POST' });
+    const dl = document.getElementById('download-link');
+    dl.href = `/platform/download/${data.filename}`;
+    dl.download = data.filename;
+    document.getElementById('export-cats').textContent = data.categories.join(' · ');
+    document.getElementById('download-area').style.display = 'block';
+    btn.textContent = 'export again';
+    btn.disabled = false;
+    toast('model exported');
+  } catch(e) {
+    toast(e.message, 'err');
+    btn.textContent = 'export to ONNX';
+    btn.disabled = false;
+  }
+}
+
 // ── SESSION DELETE ───────────────────────────────────────────
 
 async function deleteSession(id, name) {
@@ -751,9 +896,16 @@ function resetSession() {
   currentImageId = null;
   document.getElementById('session-badge').textContent = 'no session';
   document.getElementById('session-info').style.display = 'none';
-  ['cat-section', 'upload-section', 'stats-section', 'captcha-area'].forEach(id =>
+  if (trainPollTimer) { clearInterval(trainPollTimer); trainPollTimer = null; }
+  ['cat-section', 'upload-section', 'stats-section', 'captcha-area', 'train-section'].forEach(id =>
     document.getElementById(id).style.display = 'none'
   );
+  document.getElementById('train-status-area').style.display = 'none';
+  document.getElementById('export-area').style.display = 'none';
+  document.getElementById('download-area').style.display = 'none';
+  const trainBtn = document.getElementById('train-btn');
+  trainBtn.disabled = false;
+  trainBtn.textContent = 'train';
 }
 
 // ── THEME ────────────────────────────────────────────────────

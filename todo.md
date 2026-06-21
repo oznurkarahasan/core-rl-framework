@@ -86,12 +86,12 @@
     - Output: category probabilities
     - Supports resume from checkpoint (continual learning via EWC) (not done)
 
-[ ] Task 7.7: Implement training endpoint (POST /platform/train).
+[x] Task 7.7: Implement training endpoint (POST /platform/train).
     - Load labeled data from SQLite
     - Resume from last checkpoint if exists
     - Train in background, stream progress via GET /platform/train/status
 
-[ ] Task 7.8: Implement ONNX export endpoint (POST /platform/export).
+[x] Task 7.8: Implement ONNX export endpoint (POST /platform/export).
     - Export current checkpoint to checkpoints/model_v{n}.onnx
     - Return download link
 
