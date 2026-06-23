@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Test UI</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0f1117;
+  --surface: #1a1d27;
+  --border:  #2a2d3a;
+  --text:    #e2e8f0;
+  --muted:   #64748b;
+  --green:   #22c55e;
+  --red:     #ef4444;
+  --blue:    #3b82f6;
+  --accent:  #f97316;
+  --yellow:  #eab308;
+}
+
+:root[data-theme="light"] {
+  --bg:      #f8f3ea;
+  --surface: #fdfaf4;
+  --border:  #e4d5bc;
+  --text:    #2c1f0e;
+  --muted:   #907a63;
+  --green:   #2d7a3a;
+  --red:     #c0392b;
+  --blue:    #2563eb;
+  --accent:  #c45208;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  min-height: 100vh;
+  padding: 24px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1 { font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; }
+h1 span { color: var(--accent); }
+
+.badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+button:hover    { opacity: 0.85; }
+button:active   { opacity: 0.7; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+button.ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.tag {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag:hover    { border-color: var(--accent); }
+.tag.active   { border-color: var(--accent); color: var(--accent); }
+
+/* ── Image frame ─────────────────────────────────────── */
+
+.image-frame {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.image-frame img {
+  max-width: 100%;
+  max-height: 400px;
+  display: block;
+  border-radius: 8px;
+}
+
+.no-image {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* ── Prediction label ────────────────────────────────── */
+
+.pred-label-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.pred-category {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.pred-confidence {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pred-confidence.high   { color: var(--green); }
+.pred-confidence.medium { color: var(--yellow); }
+.pred-confidence.low    { color: var(--red); }
+
+/* ── Score bars ──────────────────────────────────────── */
+
+.score-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 46px;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+}
+
+.score-label {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.score-label.top { color: var(--accent); font-weight: 600; }
+
+.score-bar-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--muted);
+  transition: width 0.3s ease;
+}
+
+.score-bar-fill.top { background: var(--accent); }
+
+.score-pct {
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.score-pct.top { color: var(--accent); font-weight: 600; }
+
+/* ── Answer buttons ──────────────────────────────────── */
+
+.answer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.answer-btn {
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--text);
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.answer-btn.yes {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.answer-btn.no {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.answer-btn:hover:not(:disabled) { opacity: 0.8; transform: translateY(-1px); }
+
+kbd {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: inherit;
+  font-size: 0.7rem;
+}
+
+/* ── Done / Error states ─────────────────────────────── */
+
+.state-msg {
+  text-align: center;
+  padding: 36px 0;
+  display: none;
+}
+
+.state-msg .big  { font-size: 2rem; margin-bottom: 8px; }
+.state-msg p     { color: var(--muted); font-size: 0.82rem; }
+.state-msg.err p { color: var(--red); }
+
+/* ── Stat cards ──────────────────────────────────────── */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.stat-card .label { font-size: 0.68rem; color: var(--muted); margin-bottom: 4px; }
+.stat-card .value { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+.stat-card .value.green  { color: var(--green); }
+.stat-card .value.accent { color: var(--accent); }
+
+/* ── Per-category table ──────────────────────────────── */
+
+.cat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.77rem;
+}
+
+.cat-table th {
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cat-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cat-table tr:last-child td { border-bottom: none; }
+
+.acc-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.acc-badge.high   { background: rgba(34,197,94,0.12);  color: var(--green); }
+.acc-badge.medium { background: rgba(234,179,8,0.12);  color: var(--yellow); }
+.acc-badge.low    { background: rgba(239,68,68,0.12);  color: var(--red); }
+
+/* ── Confusion matrix ────────────────────────────────── */
+
+.cm-table {
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  min-width: 100%;
+}
+
+.cm-table th {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  text-align: center;
+}
+
+.cm-table td {
+  padding: 6px 10px;
+  text-align: center;
+  border: 1px solid var(--border);
+  min-width: 48px;
+}
+
+.cm-table td.row-label {
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.72rem;
+  border: none;
+  padding-right: 12px;
+}
+
+.cm-cell-diag  { background: rgba(34,197,94,0.15); color: var(--green); font-weight: 600; }
+.cm-cell-off   { background: rgba(239,68,68,0.08); color: var(--red); }
+.cm-cell-zero  { color: var(--border); }
+
+/* ── Upload zone ─────────────────────────────────────── */
+
+.upload-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--muted);
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.upload-zone input { display: none; }
+
+/* ── Session list ─────────────────────────────────────── */
+
+#session-list { margin-top: 10px; display: none; }
+
+#session-list .tag {
+  display: block;
+  margin-bottom: 4px;
+  text-align: left;
+  border-radius: 7px;
+  padding: 6px 12px;
+}
+
+/* ── Toast ───────────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 0.78rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+  pointer-events: none;
+  z-index: 99;
+}
+
+.toast.show     { opacity: 1; transform: translateY(0); }
+.toast.ok       { border-color: var(--green); color: var(--green); }
+.toast.err      { border-color: var(--red);   color: var(--red); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>model <span>test</span> ui</h1>
+  <div style="display:flex; gap:8px; align-items:center">
+    <button class="ghost" id="theme-btn" onclick="toggleTheme()" style="padding:4px 10px; font-size:0.75rem">light</button>
+    <div class="badge" id="session-badge">no session</div>
+  </div>
+</header>
+
+<!-- ── 1. SESSION ──────────────────────────────────────── -->
+<div class="section" id="session-section">
+  <div class="section-title">session</div>
+  <div class="row">
+    <button class="ghost" onclick="loadSessions()" style="width:100%">load sessions</button>
+  </div>
+  <div id="session-list"></div>
+</div>
+
+<!-- ── 2. AD-HOC PREDICT ────────────────────────────────── -->
+<div class="section" id="adhoc-section" style="display:none">
+  <div class="section-title">test a custom image</div>
+
+  <div class="upload-zone" id="adhoc-zone" onclick="document.getElementById('adhoc-input').click()">
+    <input type="file" id="adhoc-input" accept=".jpg,.jpeg,.png,.webp,.bmp" onchange="onAdhocFile(this.files[0])">
+    drop an image here or click to browse
+  </div>
+
+  <div id="adhoc-result" style="display:none; margin-top:16px">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px">
+      <div class="image-frame" style="min-height:160px; margin-bottom:0">
+        <img id="adhoc-img" src="" alt="" style="max-height:200px">
+      </div>
+      <div style="display:flex; flex-direction:column; justify-content:center; gap:10px">
+        <div class="pred-label-row" style="margin-bottom:0">
+          <span class="pred-category" id="adhoc-category">—</span>
+          <span class="pred-confidence" id="adhoc-confidence">—</span>
+        </div>
+        <div class="score-bars" id="adhoc-score-bars"></div>
+      </div>
+    </div>
+
+    <div id="adhoc-judgment" style="border-top:1px solid var(--border); padding-top:14px">
+      <div style="font-size:0.72rem; color:var(--muted); margin-bottom:10px">
+        is the prediction correct?
+      </div>
+      <div class="answer-row" id="adhoc-btn-row">
+        <button class="answer-btn yes" onclick="submitAdhoc(true)">✓ &nbsp;correct</button>
+        <button class="answer-btn no"  onclick="showAdhocWrong()">✗ &nbsp;wrong</button>
+      </div>
+
+      <div id="adhoc-wrong-panel" style="display:none; margin-top:12px">
+        <div style="font-size:0.72rem; color:var(--muted); margin-bottom:6px">
+          what is the actual category?
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+          <select id="adhoc-actual-select" style="background:var(--bg); border:1px solid var(--border); color:var(--text); padding:7px 10px; border-radius:7px; font-family:inherit; font-size:0.8rem; flex:1; min-width:120px">
+            <option value="">— select —</option>
+          </select>
+          <button onclick="submitAdhoc(false)" style="white-space:nowrap">confirm wrong</button>
+        </div>
+      </div>
+
+      <div id="adhoc-recorded" style="display:none; font-size:0.78rem; color:var(--muted); margin-top:10px; text-align:center">
+        recorded ✓ — drop another image to continue
+      </div>
+    </div>
+  </div>
+
+  <div id="adhoc-loading" style="display:none; font-size:0.78rem; color:var(--muted); margin-top:10px">
+    running prediction…
+  </div>
+</div>
+
+<!-- ── 3. PREDICTION ───────────────────────────────────── -->
+<div class="section" id="predict-section" style="display:none">
+  <div class="section-title">prediction</div>
+
+  <!-- no model exported yet -->
+  <div class="state-msg err" id="no-model-msg">
+    <div class="big">⚠</div>
+    <p>no model exported for this session<br>go to annotate.html → train → export ONNX first</p>
+  </div>
+
+  <!-- all images validated -->
+  <div class="state-msg" id="done-msg">
+    <div class="big">✓</div>
+    <p>all images validated for this session</p>
+    <button style="margin-top:16px" class="ghost" onclick="resetValidation()">start over</button>
+  </div>
+
+  <!-- active prediction card -->
+  <div id="pred-card">
+    <div class="image-frame">
+      <img id="pred-img" src="" alt="" style="display:none">
+      <span class="no-image" id="img-placeholder">loading…</span>
+    </div>
+
+    <div id="pred-result" style="display:none">
+      <div class="pred-label-row">
+        <span class="pred-category" id="pred-category">—</span>
+        <span class="pred-confidence" id="pred-confidence">—</span>
+      </div>
+
+      <div class="score-bars" id="score-bars"></div>
+
+      <div class="answer-row">
+        <button class="answer-btn yes" id="btn-correct" onclick="submitValidation(true)">✓ &nbsp;correct</button>
+        <button class="answer-btn no"  id="btn-wrong"   onclick="submitValidation(false)">✗ &nbsp;wrong</button>
+      </div>
+
+      <p style="font-size:0.7rem; color:var(--muted); text-align:center; margin-top:10px">
+        keyboard: <kbd>y</kbd> correct · <kbd>n</kbd> wrong
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── 3. LIVE STATS ────────────────────────────────────── -->
+<div class="section" id="stats-section" style="display:none">
+  <div class="section-title">live accuracy</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="label">tested</div>
+      <div class="value accent" id="stat-total">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">correct</div>
+      <div class="value green" id="stat-correct">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">accuracy</div>
+      <div class="value" id="stat-accuracy">—</div>
+    </div>
+  </div>
+
+  <table class="cat-table" id="cat-table" style="display:none">
+    <thead>
+      <tr>
+        <th>predicted category</th>
+        <th>tested</th>
+        <th>correct</th>
+        <th>accuracy</th>
+      </tr>
+    </thead>
+    <tbody id="cat-tbody"></tbody>
+  </table>
+
+  <div id="confusion-wrap" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--border)">
+    <div class="section-title" style="margin-bottom:10px">confusion matrix</div>
+    <div style="font-size:0.7rem; color:var(--muted); margin-bottom:8px">
+      rows = actual label · columns = model prediction
+    </div>
+    <div id="confusion-table-wrap" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+let sessionId   = null;
+let currentImg  = null;   // {image_id, filename, path, category, confidence, scores}
+
+// ── Toast ────────────────────────────────────────────────────────
+
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.className = 'toast', 2200);
+}
+
+// ── API ──────────────────────────────────────────────────────────
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(typeof err.detail === 'string' ? err.detail : res.statusText);
+  }
+  return res.json();
+}
+
+// ── Session ──────────────────────────────────────────────────────
+
+async function loadSessions() {
+  const list = document.getElementById('session-list');
+  list.style.display = 'block';
+  list.innerHTML = '<span style="font-size:0.75rem; color:var(--muted)">loading…</span>';
+  try {
+    const sessions = await api('/platform/sessions');
+    list.innerHTML = '';
+    if (!sessions.length) {
+      list.innerHTML = '<span style="font-size:0.75rem; color:var(--muted)">no sessions — create one in annotate.html</span>';
+      return;
+    }
+    sessions.forEach(s => {
+      const tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.textContent = s.name;
+      tag.onclick = () => setSession(s.id, s.name);
+      list.appendChild(tag);
+    });
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+}
+
+function setSession(id, name) {
+  sessionId = id;
+  document.getElementById('session-badge').textContent = name;
+  document.getElementById('session-list').style.display = 'none';
+  document.getElementById('adhoc-section').style.display = 'block';
+  document.getElementById('predict-section').style.display = 'block';
+  document.getElementById('stats-section').style.display = 'block';
+  loadNextImage();
+  refreshStats();
+}
+
+// ── Ad-hoc predict ───────────────────────────────────────────────
+
+async function onAdhocFile(file) {
+  if (!file || !sessionId) return;
+
+  // Show local preview immediately
+  const img = document.getElementById('adhoc-img');
+  img.src = URL.createObjectURL(file);
+  document.getElementById('adhoc-result').style.display = 'none';
+  document.getElementById('adhoc-loading').style.display = 'block';
+
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`/platform/test/predict?session_id=${sessionId}`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(typeof err.detail === 'string' ? err.detail : res.statusText);
+    }
+    const data = await res.json();
+
+    // Confidence colour
+    const confEl = document.getElementById('adhoc-confidence');
+    confEl.textContent = (data.confidence * 100).toFixed(1) + '%';
+    confEl.className = 'pred-confidence ' + (
+      data.confidence >= 0.8 ? 'high' : data.confidence >= 0.5 ? 'medium' : 'low'
+    );
+    document.getElementById('adhoc-category').textContent = data.category;
+
+    // Score bars
+    const bars = document.getElementById('adhoc-score-bars');
+    bars.innerHTML = '';
+    Object.entries(data.scores)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([cat, score]) => {
+        const isTop = cat === data.category;
+        const pct   = (score * 100).toFixed(1);
+        const row   = document.createElement('div');
+        row.className = 'score-row';
+        row.innerHTML = `
+          <div class="score-label${isTop ? ' top' : ''}">${esc(cat)}</div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill${isTop ? ' top' : ''}" style="width:${pct}%"></div>
+          </div>
+          <div class="score-pct${isTop ? ' top' : ''}">${pct}%</div>
+        `;
+        bars.appendChild(row);
+      });
+
+    // Reset judgment state
+    document.getElementById('adhoc-wrong-panel').style.display = 'none';
+    document.getElementById('adhoc-recorded').style.display = 'none';
+    document.getElementById('adhoc-btn-row').style.display = 'grid';
+    document.querySelectorAll('#adhoc-btn-row button').forEach(b => b.disabled = false);
+
+    // Populate actual-category selector from session categories
+    const sel = document.getElementById('adhoc-actual-select');
+    sel.innerHTML = '<option value="">— select —</option>';
+    try {
+      const cats = await api(`/platform/categories?session_id=${sessionId}`);
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = c.name;
+        if (c.name === data.category) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    } catch (_) {}
+
+    document.getElementById('adhoc-loading').style.display = 'none';
+    document.getElementById('adhoc-result').style.display = 'block';
+  } catch (e) {
+    document.getElementById('adhoc-loading').style.display = 'none';
+    toast(e.message, 'err');
+  }
+}
+
+function showAdhocWrong() {
+  document.getElementById('adhoc-wrong-panel').style.display = 'block';
+}
+
+async function submitAdhoc(correct) {
+  const predicted = document.getElementById('adhoc-category').textContent;
+  let actual = predicted;
+
+  if (!correct) {
+    actual = document.getElementById('adhoc-actual-select').value;
+    if (!actual) { toast('select the actual category', 'err'); return; }
+  }
+
+  document.querySelectorAll('#adhoc-btn-row button').forEach(b => b.disabled = true);
+
+  try {
+    await api(`/platform/test/validate-adhoc?session_id=${sessionId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        predicted_category: predicted,
+        actual_category:    actual,
+        correct,
+      }),
+    });
+    document.getElementById('adhoc-btn-row').style.display = 'none';
+    document.getElementById('adhoc-wrong-panel').style.display = 'none';
+    document.getElementById('adhoc-recorded').style.display = 'block';
+    toast(correct ? '✓ recorded as correct' : '✗ recorded as wrong', correct ? 'ok' : 'err');
+    refreshStats();
+  } catch (e) {
+    toast(e.message, 'err');
+    document.querySelectorAll('#adhoc-btn-row button').forEach(b => b.disabled = false);
+  }
+}
+
+// Drag & drop for ad-hoc zone
+const adhocZone = document.getElementById('adhoc-zone');
+adhocZone.addEventListener('dragover',  e => { e.preventDefault(); adhocZone.classList.add('dragover'); });
+adhocZone.addEventListener('dragleave', () => adhocZone.classList.remove('dragover'));
+adhocZone.addEventListener('drop', e => {
+  e.preventDefault();
+  adhocZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) onAdhocFile(file);
+});
+
+// ── Prediction ───────────────────────────────────────────────────
+
+async function loadNextImage() {
+  if (!sessionId) return;
+
+  showState(null);   // reset to loading
+  setButtons(true);
+
+  try {
+    const data = await api(`/platform/test/next?session_id=${sessionId}`);
+
+    if (data === null) {
+      showState('done');
+      return;
+    }
+
+    currentImg = data;
+    renderPrediction(data);
+  } catch (e) {
+    if (e.message.includes('no exported model') || e.message.includes('Export')) {
+      showState('no-model');
+    } else {
+      toast(e.message, 'err');
+    }
+  }
+}
+
+function renderPrediction(data) {
+  const img = document.getElementById('pred-img');
+  img.src = data.path + '?t=' + Date.now();
+  img.onload = () => {
+    document.getElementById('img-placeholder').style.display = 'none';
+    img.style.display = 'block';
+  };
+  img.onerror = () => {
+    document.getElementById('img-placeholder').textContent = 'image not found';
+  };
+
+  // Confidence label
+  const conf = data.confidence;
+  const confEl = document.getElementById('pred-confidence');
+  confEl.textContent = (conf * 100).toFixed(1) + '%';
+  confEl.className = 'pred-confidence ' + (conf >= 0.8 ? 'high' : conf >= 0.5 ? 'medium' : 'low');
+
+  document.getElementById('pred-category').textContent = data.category;
+
+  // Score bars — sorted by score descending
+  const bars = document.getElementById('score-bars');
+  bars.innerHTML = '';
+  const sorted = Object.entries(data.scores).sort((a, b) => b[1] - a[1]);
+  sorted.forEach(([cat, score]) => {
+    const isTop = cat === data.category;
+    const pct   = (score * 100).toFixed(1);
+    const row   = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `
+      <div class="score-label${isTop ? ' top' : ''}">${esc(cat)}</div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill${isTop ? ' top' : ''}" style="width:${pct}%"></div>
+      </div>
+      <div class="score-pct${isTop ? ' top' : ''}">${pct}%</div>
+    `;
+    bars.appendChild(row);
+  });
+
+  document.getElementById('pred-result').style.display = 'block';
+  setButtons(false);
+}
+
+async function submitValidation(correct) {
+  if (!currentImg || !sessionId) return;
+  setButtons(true);
+
+  try {
+    await api(`/platform/test/validate?session_id=${sessionId}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        image_id:           currentImg.image_id,
+        predicted_category: currentImg.category,
+        correct,
+      }),
+    });
+    toast(correct ? '✓ marked correct' : '✗ marked wrong', correct ? 'ok' : 'err');
+    currentImg = null;
+    document.getElementById('pred-result').style.display = 'none';
+    document.getElementById('pred-img').style.display = 'none';
+    document.getElementById('img-placeholder').style.display = 'block';
+    document.getElementById('img-placeholder').textContent = 'loading…';
+    refreshStats();
+    loadNextImage();
+  } catch (e) {
+    toast(e.message, 'err');
+    setButtons(false);
+  }
+}
+
+async function resetValidation() {
+  try {
+    await api(`/platform/test/reset?session_id=${sessionId}`, { method: 'POST' });
+  } catch (e) {
+    toast(e.message, 'err');
+    return;
+  }
+  currentImg = null;
+  document.getElementById('pred-result').style.display = 'none';
+  document.getElementById('pred-img').style.display = 'none';
+  document.getElementById('img-placeholder').style.display = 'block';
+  document.getElementById('img-placeholder').textContent = 'loading…';
+  refreshStats();
+  showState(null);
+  loadNextImage();
+}
+
+// ── Stats ────────────────────────────────────────────────────────
+
+async function refreshStats() {
+  if (!sessionId) return;
+  try {
+    const s = await api(`/platform/test/stats?session_id=${sessionId}`);
+
+    document.getElementById('stat-total').textContent   = s.total;
+    document.getElementById('stat-correct').textContent = s.correct;
+
+    const accEl = document.getElementById('stat-accuracy');
+    if (s.total === 0) {
+      accEl.textContent = '—';
+      accEl.style.color = '';
+    } else {
+      accEl.textContent = s.accuracy.toFixed(1) + '%';
+      accEl.style.color = s.accuracy >= 80 ? 'var(--green)'
+                        : s.accuracy >= 50 ? 'var(--yellow)'
+                        : 'var(--red)';
+    }
+
+    renderCatTable(s.per_category);
+    renderConfusionMatrix(s.confusion_matrix || {});
+  } catch (e) {}
+}
+
+function renderCatTable(perCat) {
+  const tbody = document.getElementById('cat-tbody');
+  const table = document.getElementById('cat-table');
+  tbody.innerHTML = '';
+
+  const entries = Object.entries(perCat);
+  if (!entries.length) { table.style.display = 'none'; return; }
+
+  table.style.display = 'table';
+  entries
+    .sort((a, b) => b[1].total - a[1].total)
+    .forEach(([cat, d]) => {
+      const cls = d.accuracy >= 80 ? 'high' : d.accuracy >= 50 ? 'medium' : 'low';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${esc(cat)}</td>
+        <td>${d.total}</td>
+        <td>${d.correct}</td>
+        <td><span class="acc-badge ${cls}">${d.accuracy.toFixed(1)}%</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+}
+
+function renderConfusionMatrix(cm) {
+  const wrap = document.getElementById('confusion-wrap');
+  const tableWrap = document.getElementById('confusion-table-wrap');
+
+  const actuals = Object.keys(cm);
+  if (!actuals.length) { wrap.style.display = 'none'; return; }
+
+  // Collect all predicted categories
+  const preds = [...new Set(actuals.flatMap(a => Object.keys(cm[a])))].sort();
+  const rows  = actuals.sort();
+
+  let html = '<table class="cm-table"><thead><tr><th></th>';
+  preds.forEach(p => { html += `<th>${esc(p)}</th>`; });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(actual => {
+    html += `<tr><td class="row-label">${esc(actual)}</td>`;
+    preds.forEach(pred => {
+      const count = (cm[actual] && cm[actual][pred]) || 0;
+      const cls   = count === 0 ? 'cm-cell-zero'
+                  : actual === pred ? 'cm-cell-diag'
+                  : 'cm-cell-off';
+      html += `<td class="${cls}">${count || '·'}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  tableWrap.innerHTML = html;
+  wrap.style.display = 'block';
+}
+
+// ── UI helpers ───────────────────────────────────────────────────
+
+function showState(state) {
+  // state: null (loading) | 'done' | 'no-model'
+  document.getElementById('no-model-msg').style.display = state === 'no-model' ? 'block' : 'none';
+  document.getElementById('done-msg').style.display     = state === 'done'     ? 'block' : 'none';
+  document.getElementById('pred-card').style.display    = state === null       ? 'block' : 'none';
+}
+
+function setButtons(disabled) {
+  document.getElementById('btn-correct').disabled = disabled;
+  document.getElementById('btn-wrong').disabled   = disabled;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── Theme ────────────────────────────────────────────────────────
+
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  document.documentElement.setAttribute('data-theme', isLight ? '' : 'light');
+  localStorage.setItem('theme', isLight ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = isLight ? 'light' : 'dark';
+}
+
+(function () {
+  if (localStorage.getItem('theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('theme-btn').textContent = 'dark';
+  }
+})();
+
+// ── Keyboard ─────────────────────────────────────────────────────
+
+document.addEventListener('keydown', e => {
+  if (!currentImg) return;
+  if (e.key === 'y' || e.key === 'Y') submitValidation(true);
+  if (e.key === 'n' || e.key === 'N') submitValidation(false);
+});
+</script>
+</body>
+</html>

@@ -108,6 +108,10 @@ def create_app(
     def annotate() -> FileResponse:
         return FileResponse(_STATIC / "annotate.html")
 
+    @app.get("/test", include_in_schema=False)
+    def test_ui() -> FileResponse:
+        return FileResponse(_STATIC / "test.html")
+
     # ------------------------------------------------------------------
     # /health — no auth (liveness probe, monitoring tools)
     # ------------------------------------------------------------------

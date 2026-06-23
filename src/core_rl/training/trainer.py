@@ -238,8 +238,15 @@ class PlatformTrainer:
         return self.checkpoint_dir / f"session_{self.session_id}_v{version}.pt"
 
     def _latest_checkpoint(self) -> Optional[Path]:
+        def _ver(p: Path) -> int:
+            try:
+                return int(p.stem.rsplit("_v", 1)[-1])
+            except ValueError:
+                return 0
+
         checkpoints = sorted(
-            self.checkpoint_dir.glob(f"session_{self.session_id}_v*.pt")
+            self.checkpoint_dir.glob(f"session_{self.session_id}_v*.pt"),
+            key=_ver,
         )
         return checkpoints[-1] if checkpoints else None
 

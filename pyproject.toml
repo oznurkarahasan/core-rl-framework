@@ -19,6 +19,7 @@ dependencies = [
     "torchvision>=0.15.0",
     "onnx>=1.14.0",
     "onnxscript>=0.1.0",
+    "onnxruntime>=1.16.0",
 ]
 
 [project.optional-dependencies]

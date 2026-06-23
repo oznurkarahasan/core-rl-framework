@@ -97,11 +97,11 @@
 
 ### Phase 7D: Test & Validation
 
-[ ] Task 7.9: Build test UI — model prediction screen.
+[x] Task 7.9: Build test UI — model prediction screen.
     - Show unlabeled image → model predicts → confidence score shown
     - Human confirms or rejects → accuracy score updates live
 
-[ ] Task 7.10: Implement accuracy tracking endpoint (GET /platform/stats).
+[x] Task 7.10: Implement accuracy tracking endpoint (GET /platform/stats).
     - Per-category accuracy
     - Confusion matrix
     - Total images labeled / confirmed
@@ -116,3 +116,55 @@
     - Same image → Your model prediction vs Qwen prediction
     - Side by side confidence scores
     - "Where does my model disagree with Qwen?" görünür
+
+## Phase 7F: Segmentation Labeling & Training
+
+### Phase 7F-A: Segmentation Data Collection
+
+[ ] Task 7F.1: Extend SQLite schema for segmentation masks.
+    - Add `masks` table: id, image_id, category_id, mask_path, created_at
+    - Mask stored as PNG (binary pixel map, same size as image)
+
+[ ] Task 7F.2: Add canvas drawing UI to annotate.html.
+    - Toggle between classification mode and segmentation mode
+    - Canvas overlay on image: brush tool to draw mask
+    - Eraser tool, brush size control
+    - "Save mask" → POST /platform/segmentation/mask
+    - Saved mask shown as colored overlay
+
+[ ] Task 7F.3: Add segmentation mask endpoints to platform_router.
+    - POST /platform/segmentation/mask — save drawn mask as PNG
+    - GET  /platform/segmentation/next — next image without mask
+    - GET  /platform/segmentation/mask/{image_id} — serve mask PNG
+
+### Phase 7F-B: Segmentation Model Training
+
+[ ] Task 7F.4: Implement MobileNetV2 + U-Net decoder.
+    - Encoder: MobileNetV2 backbone (pretrained, shared with classifier)
+    - Decoder: U-Net style upsampling blocks
+    - Output: binary mask, same resolution as input (224x224)
+    - Supports multiple segmentation categories (şerit, engel, yol)
+
+[ ] Task 7F.5: Implement SegmentationTrainer.
+    - Loads image + mask pairs from DB
+    - Loss: BCE + Dice loss combination
+    - Resume from checkpoint (continual learning)
+    - on_progress callback: epoch, loss, iou (intersection over union)
+
+[ ] Task 7F.6: Add segmentation training endpoints.
+    - POST /platform/segmentation/train   — start training in background
+    - GET  /platform/segmentation/status  — poll progress (epoch, loss, IoU)
+    - POST /platform/segmentation/export  — export to ONNX
+
+### Phase 7F-C: Test & Validation
+
+[ ] Task 7F.7: Add segmentation test UI.
+    - Show image → model draws predicted mask overlay
+    - Human rates: good / bad / partial
+    - IoU score shown live
+
+[ ] Task 7F.8: ONNX inference for segmentation.
+    - SegmentationPredictor class
+    - Input: image path
+    - Output: mask array + overlay image
+    - Compatible with ROS2 node (same interface as TwinLiteNet)

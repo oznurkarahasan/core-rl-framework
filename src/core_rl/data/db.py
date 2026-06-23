@@ -98,6 +98,32 @@ class PlatformDB:
 
                 CREATE INDEX IF NOT EXISTS idx_labels_category
                     ON labels(category_id);
+
+                CREATE TABLE IF NOT EXISTS validation_results (
+                    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id    INTEGER NOT NULL REFERENCES sessions(id),
+                    image_id      INTEGER NOT NULL REFERENCES images(id),
+                    predicted_cat TEXT NOT NULL,
+                    actual_cat    TEXT,
+                    correct       INTEGER NOT NULL DEFAULT 1,
+                    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+                    UNIQUE(session_id, image_id)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_validation_session
+                    ON validation_results(session_id);
+
+                CREATE TABLE IF NOT EXISTS adhoc_validations (
+                    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id    INTEGER NOT NULL,
+                    predicted_cat TEXT NOT NULL,
+                    actual_cat    TEXT NOT NULL,
+                    correct       INTEGER NOT NULL,
+                    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_adhoc_session
+                    ON adhoc_validations(session_id);
             """)
 
     # ------------------------------------------------------------------
@@ -289,3 +315,100 @@ class PlatformDB:
                 "total_labels": total_labels,
                 "per_category": [dict(r) for r in per_category],
             }
+
+    # ------------------------------------------------------------------
+    # Validation results
+    # ------------------------------------------------------------------
+
+    def add_validation_result(
+        self,
+        session_id: int,
+        image_id: int,
+        predicted_cat: str,
+        actual_cat: Optional[str],
+        correct: bool,
+    ) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO validation_results
+                    (session_id, image_id, predicted_cat, actual_cat, correct)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(session_id, image_id) DO UPDATE SET
+                    predicted_cat = excluded.predicted_cat,
+                    actual_cat    = excluded.actual_cat,
+                    correct       = excluded.correct
+                """,
+                (session_id, image_id, predicted_cat, actual_cat, int(correct)),
+            )
+
+    def get_validated_image_ids(self, session_id: int) -> set:
+        with self._conn() as conn:
+            rows = conn.execute(
+                "SELECT image_id FROM validation_results WHERE session_id = ?",
+                (session_id,),
+            ).fetchall()
+            return {r["image_id"] for r in rows}
+
+    def get_validation_results(self, session_id: int) -> list:
+        with self._conn() as conn:
+            return conn.execute(
+                "SELECT * FROM validation_results WHERE session_id = ? ORDER BY created_at",
+                (session_id,),
+            ).fetchall()
+
+    def clear_validation_results(self, session_id: int) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                "DELETE FROM validation_results WHERE session_id = ?",
+                (session_id,),
+            )
+
+    def get_image_actual_category(self, image_id: int) -> Optional[str]:
+        """Return the confirmed category for an image from the labels table, or None."""
+        with self._conn() as conn:
+            row = conn.execute(
+                """
+                SELECT c.name FROM labels l
+                JOIN categories c ON l.category_id = c.id
+                WHERE l.image_id = ? AND l.confirmed = 1
+                LIMIT 1
+                """,
+                (image_id,),
+            ).fetchone()
+            return row["name"] if row else None
+
+    # ------------------------------------------------------------------
+    # Ad-hoc validations (custom image upload → predict → correct/wrong)
+    # ------------------------------------------------------------------
+
+    def add_adhoc_validation(
+        self,
+        session_id: int,
+        predicted_cat: str,
+        actual_cat: str,
+        correct: bool,
+    ) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO adhoc_validations
+                    (session_id, predicted_cat, actual_cat, correct)
+                VALUES (?, ?, ?, ?)
+                """,
+                (session_id, predicted_cat, actual_cat, int(correct)),
+            )
+
+    def get_adhoc_validations(self, session_id: int) -> list:
+        with self._conn() as conn:
+            return conn.execute(
+                "SELECT * FROM adhoc_validations WHERE session_id = ? ORDER BY created_at",
+                (session_id,),
+            ).fetchall()
+
+    def clear_adhoc_validations(self, session_id: int) -> None:
+        with self._conn() as conn:
+            conn.execute(
+                "DELETE FROM adhoc_validations WHERE session_id = ?",
+                (session_id,),
+            )
