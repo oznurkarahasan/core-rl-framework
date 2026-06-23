@@ -215,6 +215,7 @@ class PlatformTrainer:
             str(path),
             input_names=["image"],
             output_names=["logits"],
+            dynamo=False,
         )
 
         meta = {
